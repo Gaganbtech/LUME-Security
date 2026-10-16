@@ -10,6 +10,9 @@ jobs:
   test:
     name: Test on Python ${{ matrix.python-version }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     strategy:
       fail-fast: false
       matrix:
@@ -19,6 +22,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Ensure Windows console uses UTF-8
+        if: runner.os == 'Windows'
+        run: chcp 65001
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5

@@ -1,14 +1,23 @@
-"""Terminal banners, styling, and Rich console helpers for LUME across Kali Linux, macOS, and Windows."""
-
 import os
 import platform
+import sys
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-console = Console()
+# Ensure UTF-8 output streams on Windows
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+console = Console(legacy_windows=False)
 
 
 def get_console() -> Console:
