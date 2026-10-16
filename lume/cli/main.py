@@ -4,24 +4,34 @@ import sys
 from typing import Optional
 
 import typer
-from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+# Ensure prompt_injection rules are loaded into the registry
+import lume.modules.prompt_injection  # noqa: F401
 from lume import __app_name__, __version__
-from lume.cli.display.banner import detect_environment, print_banner
+from lume.adapters.http.client import HTTPTargetAdapter
+from lume.cli.display.banner import detect_environment, get_console, print_banner, print_quick_start
 from lume.core.rule_loader.base import RuleRegistry
+from lume.core.scanner.runner import ScannerEngine, ScanOptions
+from lume.core.target_manager.manager import (
+    TargetAuthorizationError,
+    TargetManager,
+    TargetValidationError,
+)
 from lume.core.verdict.models import SeverityLevel
+from lume.reporting.console_reporter import ConsoleReporter
+from lume.reporting.json_reporter import JSONReporter
 
 app = typer.Typer(
     name=__app_name__,
     help="LUME: Enterprise AI Security CLI Toolkit for LLM Vulnerability Assessment & Prompt Injection Scanning.",
     add_completion=False,
-    no_args_is_help=True,
+    no_args_is_help=False,
 )
 
-console = Console()
+console = get_console()
 
 
 def version_callback(value: bool):
@@ -31,8 +41,9 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: Optional[bool] = typer.Option(
         None,
         "--version",
@@ -43,7 +54,10 @@ def main(
     ),
 ):
     """LUME Security Toolkit - Assessment Engine for AI & LLM Systems."""
-    pass
+    if ctx.invoked_subcommand is None:
+        print_banner(version=__version__)
+        print_quick_start()
+        raise typer.Exit(code=0)
 
 
 @app.command("version")
@@ -90,7 +104,6 @@ def list_rules(
 
     if not rules:
         console.print("[yellow]No rules currently loaded in registry.[/yellow]")
-        console.print("[dim]Security rules will be populated by Module 3 (Prompt Injection Rules).[/dim]\n")
         return
 
     for rule in rules:
@@ -115,11 +128,14 @@ def list_rules(
 
 @app.command("scan")
 def scan(
+    module: Optional[str] = typer.Argument(
+        None, help="Target security module to execute (default: prompt_injection)"
+    ),
     target: str = typer.Option(
         ..., "--target", "-t", help="Target URL, model endpoint, or socket (e.g. http://localhost:8000/v1/chat)"
     ),
-    module: str = typer.Option(
-        "prompt_injection", "--module", "-m", help="Target security module to execute (default: prompt_injection)"
+    module_opt: Optional[str] = typer.Option(
+        None, "--module", "-m", help="Alternative flag for security module (e.g. prompt_injection)"
     ),
     rule_id: Optional[str] = typer.Option(
         None, "--rule", "-r", help="Specific rule ID to evaluate (e.g. PI-001)"
@@ -133,42 +149,125 @@ def scan(
     output: str = typer.Option(
         "table", "--output", "-o", help="Output format: 'table' or 'json'"
     ),
+    report_file: Optional[str] = typer.Option(
+        None, "--report-file", help="Custom file path for JSON report output"
+    ),
+    authorized: bool = typer.Option(
+        False, "--authorized", "-a", help="Explicitly confirm authorization to test this target"
+    ),
+    headers: Optional[list[str]] = typer.Option(
+        None,
+        "--header",
+        "-H",
+        help="Custom HTTP header (e.g. -H 'Authorization: Bearer token'). Can be specified multiple times.",
+    ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        help="Target model identifier if required by endpoint (e.g. gpt-4o, llama3)",
+    ),
+    payload_format: str = typer.Option(
+        "standard",
+        "--format",
+        help="Request payload format: 'standard' ({prompt: text}) or 'openai' ({messages: [...]})",
+    ),
+    prompt_field: str = typer.Option(
+        "prompt", "--prompt-field", help="JSON key to send prompt text to target endpoint"
+    ),
+    response_field: str = typer.Option(
+        "response", "--response-field", help="JSON key to extract response text from target"
+    ),
 ):
-    """Run an automated security scan against an AI target endpoint."""
+    """Run an automated security scan against an authorized AI target endpoint."""
     print_banner(version=__version__)
+
+    active_module = module or module_opt or "prompt_injection"
+    active_module_norm = active_module.replace("-", "_").lower()
+
+    # Parse headers for real client authentication
+    parsed_headers = {}
+    if headers:
+        for h in headers:
+            if ":" in h:
+                hk, hv = h.split(":", 1)
+                parsed_headers[hk.strip()] = hv.strip()
+
+    # 1. Target Validation & Authorization
+    try:
+        target_config = TargetManager.create_target_config(
+            endpoint=target,
+            adapter_type="http",
+            timeout=timeout,
+            headers=parsed_headers,
+            model_name=model,
+            authorized=authorized,
+        )
+        target_config.extra_params["prompt_field"] = prompt_field
+        target_config.extra_params["response_field"] = response_field
+        target_config.extra_params["payload_format"] = payload_format
+    except TargetValidationError as exc:
+        console.print(f"[bold red]Validation Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+    except TargetAuthorizationError as exc:
+        console.print(f"[bold red]Authorization Error:[/bold red] {exc}")
+        console.print("[yellow]Hint: Pass the '--authorized' flag if you have verified permission to test this target.[/yellow]")
+        raise typer.Exit(code=1)
+
+    # 2. Filter Rules
+    rules = RuleRegistry.get_all()
+    if active_module_norm:
+        rules = [r for r in rules if r.category.lower() == active_module_norm]
+    if rule_id:
+        rules = [r for r in rules if r.rule_id.upper() == rule_id.upper()]
+
+    if not rules:
+        console.print(f"[bold yellow]Notice:[/bold yellow] No active rules loaded for module '{active_module}'.")
+        raise typer.Exit(code=1)
 
     console.print(
         Panel(
             Text.from_markup(
                 f"[bold cyan]Initiating Security Scan[/bold cyan]\n"
-                f"[bold]Target:[/bold] {target}\n"
-                f"[bold]Module:[/bold] {module}\n"
+                f"[bold]Target:[/bold] {target_config.endpoint}\n"
+                f"[bold]Module:[/bold] {active_module} ({len(rules)} rules loaded)\n"
                 f"[bold]Concurrency:[/bold] {concurrency} | [bold]Timeout:[/bold] {timeout}s"
             ),
             border_style="cyan",
         )
     )
 
-    rules = RuleRegistry.get_all()
-    if module:
-        rules = [r for r in rules if r.category.lower() == module.lower()]
-    if rule_id:
-        rules = [r for r in rules if r.rule_id.upper() == rule_id.upper()]
+    # 3. Initialize Adapter & Scanner Engine
+    adapter = HTTPTargetAdapter(target_config)
+    engine = ScannerEngine(adapter)
 
-    if not rules:
-        console.print(
-            f"[bold yellow]Notice:[/bold yellow] No active rules loaded for module '{module}' "
-            f"in the current build.\n"
-            f"[dim]Module 3 (Prompt Injection Rules) will register the 6 standard rules.[/dim]"
-        )
-        return
+    options = ScanOptions(
+        target_name=target_config.endpoint,
+        concurrency=concurrency,
+        timeout_per_rule=timeout,
+    )
 
-    console.print(f"[green]Executing {len(rules)} rule(s) against target...[/green]")
+    console.print("[dim]Executing security rules against target...[/dim]\n")
+    report = engine.run_scan(rules=rules, options=options)
+
+    # 4. Generate Reports
+    json_reporter = JSONReporter()
+    saved_report_path = json_reporter.generate(report, file_path=report_file)
+
+    if output.lower() == "json":
+        with open(saved_report_path, "r", encoding="utf-8") as f:
+            console.print(f.read())
+    else:
+        console_reporter = ConsoleReporter(console)
+        console_reporter.render_report(report)
+        console.print(f"\n[dim]Report saved to:[/dim] [bold cyan]{saved_report_path}[/bold cyan]")
+
+    # Scan finishes with code 0 (evaluation complete)
+    raise typer.Exit(code=0)
 
 
 @app.command("info")
 def info():
-    """Display environment diagnostics, Kali Linux, and Docker status."""
+    """Display environment diagnostics, Kali Linux, macOS, Windows, and Docker status."""
     print_banner(version=__version__)
     env_str = detect_environment()
 
@@ -178,8 +277,9 @@ def info():
             f"• [bold]Version:[/bold] {__version__}\n"
             f"• [bold]Environment:[/bold] {env_str}\n"
             f"• [bold]Python:[/bold] {sys.version}\n"
-            f"• [bold]OWASP LLM Target Scope:[/bold] LLM01 - Prompt Injection Scanner (v0.1.0)\n"
-            f"• [bold]Architecture:[/bold] Modular 7-developer decouple contract\n"
+            f"• [bold]Active Modules:[/bold] prompt_injection (6 rules loaded)\n"
+            f"• [bold]OWASP LLM Target Scope:[/bold] LLM01:2025 - Prompt Injection Scanner (v1.0.0)\n"
+            f"• [bold]Platform Support:[/bold] Kali Linux (Primary), macOS, Windows, Docker\n"
         ),
         title="System Diagnostics",
         border_style="bright_blue",

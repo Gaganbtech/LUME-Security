@@ -1,17 +1,5 @@
-"""Verdict and Evidence models for security findings."""
+"""Verdict and evidence models for LUME."""
 
-from lume.core.verdict.models import (
-    Evidence,
-    ScanReport,
-    SeverityLevel,
-    Verdict,
-    VerdictStatus,
-)
+from lume.core.verdict.models import Evidence, ScanReport, SeverityLevel, Verdict, VerdictStatus
 
-__all__ = [
-    "SeverityLevel",
-    "VerdictStatus",
-    "Evidence",
-    "Verdict",
-    "ScanReport",
-]
+__all__ = ["SeverityLevel", "VerdictStatus", "Evidence", "Verdict", "ScanReport"]

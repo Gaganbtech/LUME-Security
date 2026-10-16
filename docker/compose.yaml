@@ -1,0 +1,42 @@
+services:
+  # LUME Security Scanner CLI container
+  lume-scanner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: lume-scanner
+    command: ["scan", "prompt-injection", "--target", "http://vulnerable-ai:8001", "--authorized"]
+    volumes:
+      - ../reports:/app/reports
+    networks:
+      - lume-network
+    depends_on:
+      - vulnerable-ai
+
+  # Controlled synthetic vulnerable target for testing
+  vulnerable-ai:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: lume-vulnerable-ai
+    command: ["python", "-m", "tests.fixtures.vulnerable_ai.server", "--port", "8001"]
+    ports:
+      - "8001:8001"
+    networks:
+      - lume-network
+
+  # Controlled synthetic protected target for testing
+  protected-ai:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: lume-protected-ai
+    command: ["python", "-m", "tests.fixtures.protected_ai.server", "--port", "8002"]
+    ports:
+      - "8002:8002"
+    networks:
+      - lume-network
+
+networks:
+  lume-network:
+    driver: bridge
