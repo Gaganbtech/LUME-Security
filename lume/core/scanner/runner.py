@@ -72,7 +72,7 @@ class ScannerEngine:
             return verdict
         except asyncio.TimeoutError:
             return rule.create_verdict(
-                status=VerdictStatus.ERROR,
+                status=VerdictStatus.INCONCLUSIVE,
                 notes=f"Evaluation timed out after {timeout}s",
                 execution_time_ms=round((time.perf_counter() - start_t) * 1000, 2),
             )
@@ -121,7 +121,8 @@ class ScannerEngine:
         total_duration = round(time.perf_counter() - scan_start, 2)
 
         vulnerable_count = sum(1 for v in verdicts if v.status == VerdictStatus.VULNERABLE)
-        secure_count = sum(1 for v in verdicts if v.status == VerdictStatus.SECURE)
+        blocked_count = sum(1 for v in verdicts if v.status in (VerdictStatus.BLOCKED, VerdictStatus.SECURE))
+        inconclusive_count = sum(1 for v in verdicts if v.status == VerdictStatus.INCONCLUSIVE)
         error_count = sum(1 for v in verdicts if v.status == VerdictStatus.ERROR)
         risk_score = self.calculate_risk_score(verdicts)
 
@@ -131,7 +132,8 @@ class ScannerEngine:
             duration_seconds=total_duration,
             total_rules=len(rules),
             vulnerable_count=vulnerable_count,
-            secure_count=secure_count,
+            blocked_count=blocked_count,
+            inconclusive_count=inconclusive_count,
             error_count=error_count,
             verdicts=verdicts,
             overall_risk_score=risk_score,
