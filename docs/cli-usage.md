@@ -47,6 +47,15 @@ lume scan prompt-injection \
     --target http://localhost:8000/api/chat \
     --prompt-field "user_message" \
     --response-field "bot_reply"
+
+# Pentesting: Route through Burp Suite or OWASP ZAP with TLS bypass and rate-limiting delay
+lume scan prompt-injection \
+    --target https://staging-ai.internal:8443/chat \
+    --authorized \
+    --proxy http://127.0.0.1:8080 \
+    --insecure \
+    --delay-ms 150 \
+    --user-agent "LUME-BurpSuite-Auditor/1.0"
 ```
 
 #### Options Reference
@@ -63,6 +72,10 @@ lume scan prompt-injection \
 | `--output` | `-o` | Output format: `table` or `json` | `table` |
 | `--report-file` | | Path to save JSON report | `reports/scan_<id>.json` |
 | `--authorized` | `-a` | Explicit confirmation of authorization | `False` |
+| `--proxy` | | Upstream HTTP/HTTPS proxy URL (e.g. `http://127.0.0.1:8080`) | None |
+| `--insecure` | `-k` | Disable TLS/SSL certificate verification | `False` |
+| `--delay-ms` | | Delay between requests in ms to prevent WAF bans | `0` |
+| `--user-agent` | | Custom User-Agent header string | `LUME-Security-Scanner/0.1.0` |
 
 ---
 

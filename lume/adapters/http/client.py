@@ -1,8 +1,9 @@
 """HTTP adapter for communicating with authorized AI target endpoints."""
 
+import asyncio
 import json
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import httpx
 
@@ -12,8 +13,21 @@ from lume.adapters.base import BaseTargetAdapter, TargetConfig, TargetResponse
 class HTTPTargetAdapter(BaseTargetAdapter):
     """HTTP client adapter communicating with REST AI endpoints."""
 
-    def __init__(self, config: TargetConfig):
-        super().__init__(config)
+    def __init__(
+        self,
+        config: TargetConfig,
+        proxy: Optional[str] = None,
+        verify: Optional[bool] = None,
+        delay_ms: Optional[int] = None,
+        user_agent: Optional[str] = None,
+    ):
+        super().__init__(
+            config=config,
+            proxy=proxy,
+            verify=verify,
+            delay_ms=delay_ms,
+            user_agent=user_agent,
+        )
         self.prompt_field = self.config.extra_params.get("prompt_field", "prompt")
         self.response_field = self.config.extra_params.get("response_field", "response")
         self.payload_format = self.config.extra_params.get("payload_format", "standard")
@@ -22,10 +36,22 @@ class HTTPTargetAdapter(BaseTargetAdapter):
             "User-Agent": "LUME-Security-Scanner/0.1.0",
             **self.config.headers,
         }
+        if self.user_agent:
+            self.default_headers["User-Agent"] = self.user_agent
 
     @property
     def adapter_type(self) -> str:
         return "http"
+
+    def _get_client_kwargs(self, timeout: float) -> Dict[str, Any]:
+        """Construct common HTTP client arguments including proxy and TLS verification."""
+        kwargs: Dict[str, Any] = {
+            "timeout": timeout,
+            "verify": self.verify,
+        }
+        if self.proxy:
+            kwargs["proxy"] = self.proxy
+        return kwargs
 
     def _build_request_body(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         """Format request payload according to endpoint expectations."""
@@ -75,12 +101,17 @@ class HTTPTargetAdapter(BaseTargetAdapter):
             # Fallback to raw decoded text
             return response.text
 
-    def send_prompt(self, prompt: str, **kwargs: Any) -> TargetResponse:
+    def send_prompt(self, prompt: str, delay_ms: Optional[int] = None, **kwargs: Any) -> TargetResponse:
         """Send prompt synchronously to target AI."""
+        effective_delay = delay_ms if delay_ms is not None else self.delay_ms
+        if effective_delay > 0:
+            time.sleep(effective_delay / 1000.0)
+
         body = self._build_request_body(prompt, **kwargs)
         start_t = time.perf_counter()
 
-        with httpx.Client(timeout=self.config.timeout) as client:
+        client_kwargs = self._get_client_kwargs(timeout=self.config.timeout)
+        with httpx.Client(**client_kwargs) as client:
             resp = client.post(
                 self.config.endpoint,
                 json=body,
@@ -97,12 +128,17 @@ class HTTPTargetAdapter(BaseTargetAdapter):
                 metadata={"url": self.config.endpoint},
             )
 
-    async def send_prompt_async(self, prompt: str, **kwargs: Any) -> TargetResponse:
+    async def send_prompt_async(self, prompt: str, delay_ms: Optional[int] = None, **kwargs: Any) -> TargetResponse:
         """Send prompt asynchronously to target AI."""
+        effective_delay = delay_ms if delay_ms is not None else self.delay_ms
+        if effective_delay > 0:
+            await asyncio.sleep(effective_delay / 1000.0)
+
         body = self._build_request_body(prompt, **kwargs)
         start_t = time.perf_counter()
 
-        async with httpx.AsyncClient(timeout=self.config.timeout) as client:
+        client_kwargs = self._get_client_kwargs(timeout=self.config.timeout)
+        async with httpx.AsyncClient(**client_kwargs) as client:
             resp = await client.post(
                 self.config.endpoint,
                 json=body,
@@ -122,8 +158,9 @@ class HTTPTargetAdapter(BaseTargetAdapter):
     def health_check(self) -> bool:
         """Perform a quick reachability probe."""
         try:
-            with httpx.Client(timeout=min(self.config.timeout, 5.0)) as client:
-                resp = client.get(self.config.endpoint)
+            client_kwargs = self._get_client_kwargs(timeout=min(self.config.timeout, 5.0))
+            with httpx.Client(**client_kwargs) as client:
+                resp = client.get(self.config.endpoint, headers=self.default_headers)
                 # Any non-5xx status code indicates server is responding
                 return resp.status_code < 500
         except Exception:

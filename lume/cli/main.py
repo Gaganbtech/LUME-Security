@@ -177,6 +177,28 @@ def scan(
     response_field: str = typer.Option(
         "response", "--response-field", help="JSON key to extract response text from target"
     ),
+    proxy: Optional[str] = typer.Option(
+        None,
+        "--proxy",
+        help="Upstream HTTP/HTTPS proxy URL (e.g. http://127.0.0.1:8080 for Burp Suite or OWASP ZAP)",
+    ),
+    insecure: bool = typer.Option(
+        False,
+        "--insecure",
+        "-k",
+        help="Disable TLS/SSL certificate verification (allow testing targets with self-signed certificates)",
+    ),
+    delay_ms: int = typer.Option(
+        0,
+        "--delay-ms",
+        min=0,
+        help="Rate-limiting delay between requests in milliseconds to prevent WAF bans",
+    ),
+    user_agent: Optional[str] = typer.Option(
+        None,
+        "--user-agent",
+        help="Custom User-Agent header string to inject into request headers",
+    ),
 ):
     """Run an automated security scan against an authorized AI target endpoint."""
     print_banner(version=__version__)
@@ -192,6 +214,8 @@ def scan(
                 hk, hv = h.split(":", 1)
                 parsed_headers[hk.strip()] = hv.strip()
 
+    verify_ssl = not insecure
+
     # 1. Target Validation & Authorization
     try:
         target_config = TargetManager.create_target_config(
@@ -201,6 +225,10 @@ def scan(
             headers=parsed_headers,
             model_name=model,
             authorized=authorized,
+            proxy=proxy,
+            verify=verify_ssl,
+            delay_ms=delay_ms,
+            user_agent=user_agent,
         )
         target_config.extra_params["prompt_field"] = prompt_field
         target_config.extra_params["response_field"] = response_field
@@ -224,26 +252,46 @@ def scan(
         console.print(f"[bold yellow]Notice:[/bold yellow] No active rules loaded for module '{active_module}'.")
         raise typer.Exit(code=1)
 
+    panel_lines = [
+        "[bold cyan]Initiating Security Scan[/bold cyan]",
+        f"[bold]Target:[/bold] {target_config.endpoint}",
+        f"[bold]Module:[/bold] {active_module} ({len(rules)} rules loaded)",
+        f"[bold]Concurrency:[/bold] {concurrency} | [bold]Timeout:[/bold] {timeout}s",
+    ]
+    if proxy:
+        panel_lines.append(f"[bold]Proxy:[/bold] {proxy}")
+    if insecure:
+        panel_lines.append("[bold yellow]TLS Verification:[/bold yellow] [bold red]Disabled (--insecure)[/bold red]")
+    if delay_ms > 0:
+        panel_lines.append(f"[bold]Rate-Limiting Delay:[/bold] {delay_ms}ms")
+    if user_agent:
+        panel_lines.append(f"[bold]User-Agent:[/bold] {user_agent}")
+
     console.print(
         Panel(
-            Text.from_markup(
-                f"[bold cyan]Initiating Security Scan[/bold cyan]\n"
-                f"[bold]Target:[/bold] {target_config.endpoint}\n"
-                f"[bold]Module:[/bold] {active_module} ({len(rules)} rules loaded)\n"
-                f"[bold]Concurrency:[/bold] {concurrency} | [bold]Timeout:[/bold] {timeout}s"
-            ),
+            Text.from_markup("\n".join(panel_lines)),
             border_style="cyan",
         )
     )
 
     # 3. Initialize Adapter & Scanner Engine
-    adapter = HTTPTargetAdapter(target_config)
+    adapter = HTTPTargetAdapter(
+        target_config,
+        proxy=proxy,
+        verify=verify_ssl,
+        delay_ms=delay_ms,
+        user_agent=user_agent,
+    )
     engine = ScannerEngine(adapter)
 
     options = ScanOptions(
         target_name=target_config.endpoint,
         concurrency=concurrency,
         timeout_per_rule=timeout,
+        proxy=proxy,
+        verify=verify_ssl,
+        delay_ms=delay_ms,
+        user_agent=user_agent,
     )
 
     console.print("[dim]Executing security rules against target...[/dim]\n")
