@@ -295,3 +295,121 @@ async def test_test_executor_with_delay():
     res = await executor.execute_prompt_async(test_id="T1", prompt="Hello")
     assert res.success is True
     adapter.send_prompt_async.assert_called_once_with("Hello", delay_ms=75)
+
+
+def test_http_adapter_cert_from_config():
+    from lume.adapters.base import TargetConfig
+    from lume.adapters.http.client import HTTPTargetAdapter
+
+    config = TargetConfig(
+        endpoint="https://staging.internal:8443/api",
+        cert="/etc/lume/client.pem",
+        verify=False,
+    )
+    adapter = HTTPTargetAdapter(config)
+    assert adapter.cert == "/etc/lume/client.pem"
+
+    # Verify _get_client_kwargs includes cert
+    kwargs = adapter._get_client_kwargs(timeout=10.0)
+    assert kwargs["cert"] == "/etc/lume/client.pem"
+    assert kwargs["verify"] is False
+
+
+def test_http_adapter_cert_override_at_init():
+    from lume.adapters.base import TargetConfig
+    from lume.adapters.http.client import HTTPTargetAdapter
+
+    config = TargetConfig(
+        endpoint="https://staging.internal:8443/api",
+        cert="/etc/lume/original.pem",
+    )
+    adapter = HTTPTargetAdapter(config, cert="/tmp/override.pem")
+    assert adapter.cert == "/tmp/override.pem"
+
+    kwargs = adapter._get_client_kwargs(timeout=5.0)
+    assert kwargs["cert"] == "/tmp/override.pem"
+
+
+def test_http_adapter_no_cert_omits_key():
+    from lume.adapters.base import TargetConfig
+    from lume.adapters.http.client import HTTPTargetAdapter
+
+    config = TargetConfig(endpoint="http://localhost:8000/api")
+    adapter = HTTPTargetAdapter(config)
+    assert adapter.cert is None
+
+    kwargs = adapter._get_client_kwargs(timeout=5.0)
+    assert "cert" not in kwargs
+
+
+def test_http_adapter_cert_passed_to_httpx_sync():
+    from unittest.mock import MagicMock, patch
+
+    from lume.adapters.base import TargetConfig
+    from lume.adapters.http.client import HTTPTargetAdapter
+
+    config = TargetConfig(
+        endpoint="https://target.internal/api",
+        cert="/etc/lume/client.pem",
+        verify=False,
+    )
+    adapter = HTTPTargetAdapter(config)
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.headers = {"content-type": "application/json"}
+    mock_resp.json.return_value = {"response": "OK"}
+    mock_client_instance = MagicMock()
+    mock_client_instance.post.return_value = mock_resp
+
+    with patch("httpx.Client") as mock_client:
+        mock_client.return_value.__enter__.return_value = mock_client_instance
+        adapter.send_prompt("test")
+
+        mock_client.assert_called_once_with(
+            timeout=30.0,
+            verify=False,
+            cert="/etc/lume/client.pem",
+        )
+
+
+@pytest.mark.asyncio
+async def test_http_adapter_cert_passed_to_httpx_async():
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    from lume.adapters.base import TargetConfig
+    from lume.adapters.http.client import HTTPTargetAdapter
+
+    config = TargetConfig(
+        endpoint="https://target.internal/api",
+        cert="/etc/lume/client.pem",
+        verify=False,
+    )
+    adapter = HTTPTargetAdapter(config)
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.headers = {"content-type": "application/json"}
+    mock_resp.json.return_value = {"response": "OK"}
+    mock_client_instance = AsyncMock()
+    mock_client_instance.post.return_value = mock_resp
+
+    with patch("httpx.AsyncClient") as mock_async_client:
+        mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+        resp = await adapter.send_prompt_async("test")
+
+        mock_async_client.assert_called_once_with(
+            timeout=30.0,
+            verify=False,
+            cert="/etc/lume/client.pem",
+        )
+        assert resp.status_code == 200
+
+
+def test_target_manager_create_config_with_cert():
+    cfg = TargetManager.create_target_config(
+        endpoint="http://localhost:8000/api",
+        cert="/etc/lume/client.pem",
+        authorized=True,
+    )
+    assert cfg.cert == "/etc/lume/client.pem"

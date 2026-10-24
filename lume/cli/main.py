@@ -199,6 +199,11 @@ def scan(
         "--user-agent",
         help="Custom User-Agent header string to inject into request headers",
     ),
+    cert: Optional[str] = typer.Option(
+        None,
+        "--cert",
+        help="Path to client certificate PEM file for mTLS authentication",
+    ),
 ):
     """Run an automated security scan against an authorized AI target endpoint."""
     print_banner(version=__version__)
@@ -227,6 +232,7 @@ def scan(
             authorized=authorized,
             proxy=proxy,
             verify=verify_ssl,
+            cert=cert,
             delay_ms=delay_ms,
             user_agent=user_agent,
         )
@@ -266,6 +272,8 @@ def scan(
         panel_lines.append(f"[bold]Rate-Limiting Delay:[/bold] {delay_ms}ms")
     if user_agent:
         panel_lines.append(f"[bold]User-Agent:[/bold] {user_agent}")
+    if cert:
+        panel_lines.append(f"[bold]Client Cert:[/bold] {cert}")
 
     console.print(
         Panel(
@@ -279,6 +287,7 @@ def scan(
         target_config,
         proxy=proxy,
         verify=verify_ssl,
+        cert=cert,
         delay_ms=delay_ms,
         user_agent=user_agent,
     )
@@ -290,6 +299,7 @@ def scan(
         timeout_per_rule=timeout,
         proxy=proxy,
         verify=verify_ssl,
+        cert=cert,
         delay_ms=delay_ms,
         user_agent=user_agent,
     )

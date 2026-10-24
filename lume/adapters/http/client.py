@@ -18,6 +18,7 @@ class HTTPTargetAdapter(BaseTargetAdapter):
         config: TargetConfig,
         proxy: Optional[str] = None,
         verify: Optional[bool] = None,
+        cert: Optional[str] = None,
         delay_ms: Optional[int] = None,
         user_agent: Optional[str] = None,
     ):
@@ -25,6 +26,7 @@ class HTTPTargetAdapter(BaseTargetAdapter):
             config=config,
             proxy=proxy,
             verify=verify,
+            cert=cert,
             delay_ms=delay_ms,
             user_agent=user_agent,
         )
@@ -44,13 +46,15 @@ class HTTPTargetAdapter(BaseTargetAdapter):
         return "http"
 
     def _get_client_kwargs(self, timeout: float) -> Dict[str, Any]:
-        """Construct common HTTP client arguments including proxy and TLS verification."""
+        """Construct common HTTP client arguments including proxy, TLS, and cert."""
         kwargs: Dict[str, Any] = {
             "timeout": timeout,
             "verify": self.verify,
         }
         if self.proxy:
             kwargs["proxy"] = self.proxy
+        if self.cert:
+            kwargs["cert"] = self.cert
         return kwargs
 
     def _build_request_body(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:

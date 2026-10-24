@@ -104,6 +104,7 @@ class TargetManager:
         authorized: bool = False,
         proxy: Optional[str] = None,
         verify: bool = True,
+        cert: Optional[str] = None,
         delay_ms: int = 0,
         user_agent: Optional[str] = None,
     ) -> TargetConfig:
@@ -119,6 +120,7 @@ class TargetManager:
             model_name=model_name,
             proxy=proxy,
             verify=verify,
+            cert=cert,
             delay_ms=delay_ms,
             user_agent=user_agent,
         )

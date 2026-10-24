@@ -16,6 +16,7 @@ class TargetConfig(BaseModel):
     extra_params: Dict[str, Any] = Field(default_factory=dict, description="Additional provider parameters")
     proxy: Optional[str] = Field(default=None, description="Upstream proxy URL (e.g. http://127.0.0.1:8080)")
     verify: bool = Field(default=True, description="Verify TLS certificates")
+    cert: Optional[str] = Field(default=None, description="Path to client certificate PEM file for mTLS")
     delay_ms: int = Field(default=0, ge=0, description="Rate-limiting delay between requests in milliseconds")
     user_agent: Optional[str] = Field(default=None, description="Custom User-Agent header string")
 
@@ -37,12 +38,14 @@ class BaseTargetAdapter(ABC):
         config: TargetConfig,
         proxy: Optional[str] = None,
         verify: Optional[bool] = None,
+        cert: Optional[str] = None,
         delay_ms: Optional[int] = None,
         user_agent: Optional[str] = None,
     ):
         self.config = config
         self.proxy: Optional[str] = proxy if proxy is not None else config.proxy
         self.verify: bool = verify if verify is not None else config.verify
+        self.cert: Optional[str] = cert if cert is not None else config.cert
         self.delay_ms: int = delay_ms if delay_ms is not None else config.delay_ms
         self.user_agent: Optional[str] = user_agent if user_agent is not None else config.user_agent
 

@@ -88,6 +88,7 @@ def test_cli_scan_help_pentest_options():
     assert "-k" in result.output
     assert "--delay-ms" in result.output
     assert "--user-agent" in result.output
+    assert "--cert" in result.output
 
 
 def test_cli_scan_with_pentest_flags(monkeypatch):
@@ -192,3 +193,52 @@ def test_cli_scan_with_long_insecure_flag():
         assert result.exit_code == 0
         assert len(captured_adapter) == 1
         assert captured_adapter[0].verify is False
+
+
+def test_cli_scan_with_cert_flag():
+    """Verify --cert flag propagates client certificate path to adapter."""
+    from unittest.mock import MagicMock, patch
+
+    from lume.core.verdict.models import ScanReport
+
+    captured_adapter = []
+    mock_report = ScanReport(
+        scan_id="test-scan",
+        target="http://localhost:8000/v1/chat",
+        duration_seconds=0.5,
+        total_rules=1,
+        verdicts=[],
+    )
+
+    with patch("lume.cli.main.ScannerEngine") as mock_engine_cls, \
+         patch("lume.cli.main.RuleRegistry.get_all") as mock_get_rules:
+        mock_rule = MagicMock()
+        mock_rule.category = "prompt_injection"
+        mock_rule.rule_id = "PI-001"
+        mock_get_rules.return_value = [mock_rule]
+
+        mock_engine = MagicMock()
+        mock_engine.run_scan.return_value = mock_report
+        mock_engine_cls.side_effect = lambda adapter: captured_adapter.append(adapter) or mock_engine
+
+        result = runner.invoke(
+            app,
+            [
+                "scan",
+                "-t",
+                "http://localhost:8000/v1/chat",
+                "--authorized",
+                "--cert",
+                "/etc/lume/client.pem",
+                "-k",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert len(captured_adapter) == 1
+        adapter = captured_adapter[0]
+        assert adapter.cert == "/etc/lume/client.pem"
+        assert adapter.verify is False
+
+        scan_opts = mock_engine.run_scan.call_args.kwargs["options"]
+        assert scan_opts.cert == "/etc/lume/client.pem"

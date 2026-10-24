@@ -76,6 +76,7 @@ lume scan prompt-injection \
 | `--insecure` | `-k` | Disable TLS/SSL certificate verification | `False` |
 | `--delay-ms` | | Delay between requests in ms to prevent WAF bans | `0` |
 | `--user-agent` | | Custom User-Agent header string | `LUME-Security-Scanner/0.1.0` |
+| `--cert` | | Path to client certificate PEM file for mTLS | None |
 
 ---
 
