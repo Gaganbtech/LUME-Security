@@ -120,6 +120,15 @@ lume scan prompt-injection \
     --format openai \
     --model gpt-4o \
     -H "Authorization: Bearer <CLIENT_API_KEY>"
+
+# Pentesting: Route through Burp Suite / OWASP ZAP with TLS bypass and rate limiting
+lume scan prompt-injection \
+    --target https://staging-ai.internal:8443/v1/chat \
+    --authorized \
+    --proxy http://127.0.0.1:8080 \
+    --insecure \
+    --delay-ms 100 \
+    --user-agent "BurpSuite-LUME-Auditor/1.0"
 ```
 
 ### 3. Run One-Touch Local Verification Demo

@@ -102,6 +102,11 @@ class TargetManager:
         headers: Optional[dict] = None,
         model_name: Optional[str] = None,
         authorized: bool = False,
+        proxy: Optional[str] = None,
+        verify: bool = True,
+        cert: Optional[str] = None,
+        delay_ms: int = 0,
+        user_agent: Optional[str] = None,
     ) -> TargetConfig:
         """Validate target and build a safe TargetConfig object."""
         normalized_url = cls.validate_target_url(endpoint)
@@ -113,4 +118,9 @@ class TargetManager:
             timeout=timeout,
             headers=headers or {},
             model_name=model_name,
+            proxy=proxy,
+            verify=verify,
+            cert=cert,
+            delay_ms=delay_ms,
+            user_agent=user_agent,
         )

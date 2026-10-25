@@ -24,6 +24,11 @@ class ScanOptions(BaseModel):
     concurrency: int = Field(default=2, ge=1, le=10, description="Max concurrent rules running")
     timeout_per_rule: float = Field(default=30.0, description="Timeout in seconds per rule")
     stop_on_critical: bool = Field(default=False, description="Abort scan upon first CRITICAL finding")
+    proxy: Optional[str] = Field(default=None, description="Upstream proxy URL")
+    verify: bool = Field(default=True, description="Verify TLS certificates")
+    cert: Optional[str] = Field(default=None, description="Client certificate PEM path")
+    delay_ms: int = Field(default=0, ge=0, description="Rate-limiting delay between requests in milliseconds")
+    user_agent: Optional[str] = Field(default=None, description="Custom User-Agent header")
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -140,6 +145,11 @@ class ScannerEngine:
             metadata={
                 "adapter": self.target.adapter_type,
                 "concurrency": concurrency,
+                "proxy": getattr(self.target, "proxy", None),
+                "verify": getattr(self.target, "verify", True),
+                "cert": getattr(self.target, "cert", None),
+                "delay_ms": getattr(self.target, "delay_ms", 0),
+                "user_agent": getattr(self.target, "user_agent", None),
             },
         )
 

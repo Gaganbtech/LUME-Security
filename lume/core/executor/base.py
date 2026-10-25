@@ -22,9 +22,15 @@ class ExecutionResult(BaseModel):
 class TestExecutor:
     """Executes controlled test cases against target adapters with safety boundaries."""
 
-    def __init__(self, target_adapter: BaseTargetAdapter, max_payload_size: int = 10000):
+    def __init__(
+        self,
+        target_adapter: BaseTargetAdapter,
+        max_payload_size: int = 10000,
+        delay_ms: Optional[int] = None,
+    ):
         self.target = target_adapter
         self.max_payload_size = max_payload_size
+        self.delay_ms = delay_ms if delay_ms is not None else getattr(target_adapter, "delay_ms", 0)
 
     def validate_payload(self, prompt: str) -> str:
         """Enforce payload size constraints."""
@@ -41,6 +47,7 @@ class TestExecutor:
         test_id: str,
         prompt: str,
         timeout: float = 30.0,
+        delay_ms: Optional[int] = None,
         **kwargs: Any,
     ) -> ExecutionResult:
         """Safely execute a prompt against the target adapter asynchronously.
@@ -50,10 +57,11 @@ class TestExecutor:
         """
         validated_prompt = self.validate_payload(prompt)
         start_t = time.perf_counter()
+        effective_delay = delay_ms if delay_ms is not None else self.delay_ms
 
         try:
             target_response = await asyncio.wait_for(
-                self.target.send_prompt_async(validated_prompt, **kwargs),
+                self.target.send_prompt_async(validated_prompt, delay_ms=effective_delay, **kwargs),
                 timeout=timeout,
             )
             elapsed_ms = round((time.perf_counter() - start_t) * 1000, 2)
