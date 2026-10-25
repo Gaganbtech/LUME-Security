@@ -171,110 +171,119 @@ def main():
 
     print(f"\n[+] Starting Mock Target Server on http://127.0.0.1:{target_port}...")
     target_server = ThreadingHTTPServer(("127.0.0.1", target_port), VulnerableAIHandler)
+    target_server.daemon_threads = True
     target_thread = threading.Thread(target=target_server.serve_forever, daemon=True)
     target_thread.start()
 
     print(f"[+] Starting Burp/ZAP Simulation Proxy Listener on {proxy_url}...")
     proxy_server = ThreadingHTTPServer(("127.0.0.1", proxy_port), BurpZapProxyHandler)
+    proxy_server.daemon_threads = True
     proxy_thread = threading.Thread(target=proxy_server.serve_forever, daemon=True)
     proxy_thread.start()
     time.sleep(0.3)
 
-    custom_ua = "LUME-Kali-Pentest/1.0"
-    delay_ms = 200
+    try:
+        custom_ua = "LUME-Kali-Pentest/1.0"
+        delay_ms = 200
 
-    import shutil
+        import shutil
 
-    lume_bin = shutil.which("lume") or sys.executable
-    if lume_bin.endswith("lume"):
-        cmd = [
-            lume_bin,
-            "scan",
-            "prompt-injection",
-            "--target",
-            target_url,
-            "--authorized",
-            "--proxy",
-            proxy_url,
-            "--insecure",
-            "--delay-ms",
-            str(delay_ms),
-            "--user-agent",
-            custom_ua,
-        ]
-    else:
-        cmd = [
-            sys.executable,
-            "-m",
-            "lume.cli.main",
-            "scan",
-            "prompt-injection",
-            "--target",
-            target_url,
-            "--authorized",
-            "--proxy",
-            proxy_url,
-            "--insecure",
-            "--delay-ms",
-            str(delay_ms),
-            "--user-agent",
-            custom_ua,
-        ]
+        lume_bin = shutil.which("lume") or sys.executable
+        if lume_bin.endswith("lume"):
+            cmd = [
+                lume_bin,
+                "scan",
+                "prompt-injection",
+                "--target",
+                target_url,
+                "--authorized",
+                "--proxy",
+                proxy_url,
+                "--insecure",
+                "--delay-ms",
+                str(delay_ms),
+                "--user-agent",
+                custom_ua,
+            ]
+        else:
+            cmd = [
+                sys.executable,
+                "-m",
+                "lume.cli.main",
+                "scan",
+                "prompt-injection",
+                "--target",
+                target_url,
+                "--authorized",
+                "--proxy",
+                proxy_url,
+                "--insecure",
+                "--delay-ms",
+                str(delay_ms),
+                "--user-agent",
+                custom_ua,
+            ]
 
-    print("\n[*] Executing Acceptance Criteria CLI Command:")
-    print(f"    {' '.join(cmd)}\n")
-    print("-" * 80)
+        print("\n[*] Executing Acceptance Criteria CLI Command:")
+        print(f"    {' '.join(cmd)}\n")
+        print("-" * 80)
 
-    # Execute LUME CLI scan command
-    cli_proc = subprocess.run(cmd, capture_output=True, text=True)
+        # Execute LUME CLI scan command
+        cli_proc = subprocess.run(cmd, capture_output=True, text=True)
 
-    print(cli_proc.stdout)
-    if cli_proc.stderr:
-        print("[stderr]", cli_proc.stderr)
+        print(cli_proc.stdout)
+        if cli_proc.stderr:
+            print("[stderr]", cli_proc.stderr)
 
-    print("=" * 80)
-    print(" CAPTURED BURP SUITE / OWASP ZAP PROXY INTERCEPTION LOGS")
-    print("=" * 80)
-    print(f"Total Intercepted Requests: {len(captured_requests)}")
-    print("-" * 80)
-    print(
-        f"{'#':<3} | {'Method':<6} | {'Target URL':<36} | {'User-Agent':<24} | {'Interval':<10} | {'Status'}"
-    )
-    print("-" * 80)
-
-    for req in captured_requests:
-        interval_str = f"+{req.time_since_prev_ms:.0f}ms" if req.time_since_prev_ms > 0 else "0ms (init)"
+        print("=" * 80)
+        print(" CAPTURED BURP SUITE / OWASP ZAP PROXY INTERCEPTION LOGS")
+        print("=" * 80)
+        print(f"Total Intercepted Requests: {len(captured_requests)}")
+        print("-" * 80)
         print(
-            f"{req.request_id:<3} | {req.method:<6} | {req.path:<36} | {req.user_agent:<24} | {interval_str:<10} | {req.status_code} OK"
+            f"{'#':<3} | {'Method':<6} | {'Target URL':<36} | {'User-Agent':<24} | {'Interval':<10} | {'Status'}"
         )
-        print(f"    ↳ Payload: {req.payload[:75]}...")
+        print("-" * 80)
 
-    print("-" * 80)
+        for req in captured_requests:
+            interval_str = f"+{req.time_since_prev_ms:.0f}ms" if req.time_since_prev_ms > 0 else "0ms (init)"
+            print(
+                f"{req.request_id:<3} | {req.method:<6} | {req.path:<36} | {req.user_agent:<24} | {interval_str:<10} | {req.status_code} OK"
+            )
+            print(f"    ↳ Payload: {req.payload[:75]}...")
 
-    # 4. Validations
-    print("\n[*] Verifying Acceptance Criteria:")
-    assert len(captured_requests) >= 6, f"Expected at least 6 requests, intercepted {len(captured_requests)}"
-    print(f"  [PASS] Intercepted {len(captured_requests)} requests through upstream proxy (6 Prompt Injection vectors)")
+        print("-" * 80)
 
-    ua_matches = all(req.user_agent == custom_ua for req in captured_requests)
-    assert ua_matches, f"User-Agent mismatch! Expected: {custom_ua}"
-    print(f"  [PASS] Custom User-Agent '{custom_ua}' intercepted on 100% of requests")
+        # 4. Validations
+        print("\n[*] Verifying Acceptance Criteria:")
+        assert len(captured_requests) >= 6, f"Expected at least 6 requests, intercepted {len(captured_requests)}"
+        print(f"  [PASS] Intercepted {len(captured_requests)} requests through upstream proxy (6 Prompt Injection vectors)")
 
-    # Verify rate-limiting delay between requests
-    intervals = [r.time_since_prev_ms for r in captured_requests[1:]]
-    avg_interval = sum(intervals) / len(intervals) if intervals else 0
-    print(f"  [PASS] Rate-limiting delay enforced (average interval: {avg_interval:.1f}ms, configured: {delay_ms}ms)")
+        ua_matches = all(req.user_agent == custom_ua for req in captured_requests)
+        assert ua_matches, f"User-Agent mismatch! Expected: {custom_ua}"
+        print(f"  [PASS] Custom User-Agent '{custom_ua}' intercepted on 100% of requests")
 
-    assert cli_proc.returncode == 0, f"CLI command failed with exit code {cli_proc.returncode}"
-    print("  [PASS] LUME Scan CLI execution exited cleanly with returncode 0")
+        # Verify rate-limiting delay between requests
+        intervals = [r.time_since_prev_ms for r in captured_requests[1:]]
+        avg_interval = sum(intervals) / len(intervals) if intervals else 0
+        print(f"  [PASS] Rate-limiting delay enforced (average interval: {avg_interval:.1f}ms, configured: {delay_ms}ms)")
 
-    print("\n[✓] 100% VERIFICATION PASSED: Full proxy interception and pentesting workflow operational!\n")
+        assert cli_proc.returncode == 0, f"CLI command failed with exit code {cli_proc.returncode}"
+        print("  [PASS] LUME Scan CLI execution exited cleanly with returncode 0")
 
-    # Cleanup
-    proxy_server.shutdown()
-    target_server.shutdown()
-    proxy_server.server_close()
-    target_server.server_close()
+        print("\n[✓] 100% VERIFICATION PASSED: Full proxy interception and pentesting workflow operational!\n")
+    finally:
+        # Cleanup
+        try:
+            proxy_server.shutdown()
+            proxy_server.server_close()
+        except Exception:
+            pass
+        try:
+            target_server.shutdown()
+            target_server.server_close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
