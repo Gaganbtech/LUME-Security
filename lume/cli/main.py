@@ -22,7 +22,9 @@ from lume.core.target_manager.manager import (
 )
 from lume.core.verdict.models import SeverityLevel
 from lume.reporting.console_reporter import ConsoleReporter
+from lume.reporting.html_reporter import HTMLReporter
 from lume.reporting.json_reporter import JSONReporter
+from lume.reporting.sarif_reporter import SARIFReporter
 
 app = typer.Typer(
     name=__app_name__,
@@ -147,10 +149,10 @@ def scan(
         30.0, "--timeout", help="Per-rule timeout in seconds"
     ),
     output: str = typer.Option(
-        "table", "--output", "-o", help="Output format: 'table' or 'json'"
+        "table", "--output", "-o", help="Output format: table, json, sarif, or html"
     ),
     report_file: Optional[str] = typer.Option(
-        None, "--report-file", help="Custom file path for JSON report output"
+        None, "--report-file", help="Write the selected report format to this path"
     ),
     authorized: bool = typer.Option(
         False, "--authorized", "-a", help="Explicitly confirm authorization to test this target"
@@ -206,8 +208,11 @@ def scan(
     ),
 ):
     """Run an automated security scan against an authorized AI target endpoint."""
+    report_format = output.lower()
+    if report_format not in {"table", "json", "sarif", "html"}:
+        console.print(f"[bold red]Invalid --output:[/bold red] {output}. Choose table, json, sarif, or html.")
+        raise typer.Exit(code=2)
     print_banner(version=__version__)
-
     active_module = module or module_opt or "prompt_injection"
     active_module_norm = active_module.replace("-", "_").lower()
 
@@ -307,18 +312,23 @@ def scan(
     console.print("[dim]Executing security rules against target...[/dim]\n")
     report = engine.run_scan(rules=rules, options=options)
 
-    # 4. Generate Reports
-    json_reporter = JSONReporter()
-    saved_report_path = json_reporter.generate(report, file_path=report_file)
-
-    if output.lower() == "json":
-        with open(saved_report_path, "r", encoding="utf-8") as f:
-            console.print(f.read())
+    # 4. Generate selected format. Table keeps the existing JSON sidecar behavior.
+    if report_format == "sarif":
+        saved_report_path = SARIFReporter().generate(report, file_path=report_file)
+        console.print(f"[green]SARIF report saved:[/green] {saved_report_path}")
+    elif report_format == "html":
+        saved_report_path = HTMLReporter().generate(report, file_path=report_file)
+        console.print(f"[green]HTML report saved:[/green] {saved_report_path}")
     else:
-        console_reporter = ConsoleReporter(console)
-        console_reporter.render_report(report)
-        console.print(f"\n[dim]Report saved to:[/dim] [bold cyan]{saved_report_path}[/bold cyan]")
-
+        json_reporter = JSONReporter()
+        saved_report_path = json_reporter.generate(report, file_path=report_file)
+        if report_format == "json":
+            with open(saved_report_path, "r", encoding="utf-8") as f:
+                console.print(f.read())
+        else:
+            console_reporter = ConsoleReporter(console)
+            console_reporter.render_report(report)
+            console.print(f"\n[dim]Report saved to:[/dim] [bold cyan]{saved_report_path}[/bold cyan]")
     # Scan finishes with code 0 (evaluation complete)
     raise typer.Exit(code=0)
 
