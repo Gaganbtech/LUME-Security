@@ -42,6 +42,7 @@ htmlcov/
 *.log
 reports/*.json
 reports/*.html
+reports/*.sarif
 reports/*.md
 !reports/README.md
 
