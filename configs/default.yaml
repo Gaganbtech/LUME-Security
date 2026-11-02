@@ -1,0 +1,21 @@
+# LUME Security Toolkit Default Configuration (v0.1.0)
+toolkit:
+  version: "0.1.0"
+  log_level: "INFO"
+
+scan:
+  default_module: "prompt_injection"
+  concurrency: 2
+  timeout_seconds: 30.0
+  stop_on_critical: false
+
+adapters:
+  http:
+    timeout: 30.0
+    headers:
+      Content-Type: "application/json"
+      User-Agent: "LUME-Security-Scanner/0.1.0"
+
+reporting:
+  format: "table"
+  output_dir: "reports"
