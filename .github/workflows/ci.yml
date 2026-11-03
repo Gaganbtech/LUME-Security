@@ -43,8 +43,15 @@ jobs:
           ruff check .
 
       - name: Run Pytest Test Suite
+        shell: bash
         run: |
-          python -m pytest -v --tb=short
+          python -m pytest -v --tb=short | tee test_run.log || {
+            echo "### Pytest Failure Details" >> "$GITHUB_STEP_SUMMARY"
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 100 test_run.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
 
       - name: Verify CLI Entrypoint
         run: |
