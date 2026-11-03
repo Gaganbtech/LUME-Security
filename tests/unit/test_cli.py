@@ -81,14 +81,17 @@ def test_cli_list_rules_populated():
 
 def test_cli_scan_help_pentest_options():
     """Verify `lume scan --help` includes all pentester networking options."""
+    import re
+
     result = runner.invoke(app, ["scan", "--help"])
     assert result.exit_code == 0
-    assert "--proxy" in result.output
-    assert "--insecure" in result.output
-    assert "-k" in result.output
-    assert "--delay-ms" in result.output
-    assert "--user-agent" in result.output
-    assert "--cert" in result.output
+    clean_output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", result.output)
+    assert "--proxy" in clean_output
+    assert "--insecure" in clean_output
+    assert "-k" in clean_output
+    assert "--delay-ms" in clean_output
+    assert "--user-agent" in clean_output
+    assert "--cert" in clean_output
 
 
 def test_cli_scan_with_pentest_flags(monkeypatch):
