@@ -72,6 +72,7 @@ class ProtectedAIHandler(BaseHTTPRequestHandler):
 
 def run_server(port: int = 8002) -> ThreadingHTTPServer:
     """Instantiate and start the protected test fixture server."""
+    ThreadingHTTPServer.allow_reuse_address = True
     server = ThreadingHTTPServer(("127.0.0.1", port), ProtectedAIHandler)
     return server
 

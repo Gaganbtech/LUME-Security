@@ -72,6 +72,7 @@ class VulnerableAIHandler(BaseHTTPRequestHandler):
 
 def run_server(port: int = 8001) -> ThreadingHTTPServer:
     """Instantiate and start the vulnerable test fixture server."""
+    ThreadingHTTPServer.allow_reuse_address = True
     server = ThreadingHTTPServer(("127.0.0.1", port), VulnerableAIHandler)
     return server
 

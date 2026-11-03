@@ -1,7 +1,6 @@
 """End-to-End tests validating upstream proxy routing, rate-limiting, and headers."""
 
 import json
-import socket
 import threading
 import time
 import urllib.error
@@ -53,6 +52,10 @@ class ProxyCaptureHandler(BaseHTTPRequestHandler):
             status = e.code
             headers = e.headers
             resp_body = e.read()
+        except Exception as e:
+            status = 502
+            headers = {}
+            resp_body = str(e).encode("utf-8")
 
         with self.lock:
             self.captured.append({
@@ -77,27 +80,27 @@ class ProxyCaptureHandler(BaseHTTPRequestHandler):
 
 def test_proxy_interception_e2e(tmp_path):
     """Verify that scan traffic routes through the upstream proxy with custom headers."""
-    # Find ports
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        target_port = s.getsockname()[1]
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        proxy_port = s.getsockname()[1]
-
-    # Start target server
-    target_server = ThreadingHTTPServer(("127.0.0.1", target_port), VulnerableAIHandler)
+    # Start target server with port 0 (OS allocated)
+    ThreadingHTTPServer.allow_reuse_address = True
+    target_server = ThreadingHTTPServer(("127.0.0.1", 0), VulnerableAIHandler)
+    target_port = target_server.server_address[1]
     t_target = threading.Thread(target=target_server.serve_forever, daemon=True)
     t_target.start()
 
-    # Reset and start proxy server
+    # Reset and start proxy server with port 0 (OS allocated)
     ProxyCaptureHandler.captured.clear()
-    proxy_server = ThreadingHTTPServer(("127.0.0.1", proxy_port), ProxyCaptureHandler)
+    proxy_server = ThreadingHTTPServer(("127.0.0.1", 0), ProxyCaptureHandler)
+    proxy_port = proxy_server.server_address[1]
     t_proxy = threading.Thread(target=proxy_server.serve_forever, daemon=True)
     t_proxy.start()
 
-    time.sleep(0.1)
+    for _ in range(50):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{target_port}", timeout=0.2) as resp:
+                if resp.status == 200:
+                    break
+        except Exception:
+            time.sleep(0.05)
 
     custom_ua = "LUME-Kali-Pentest/1.0"
     report_file = tmp_path / "proxy_report.json"
