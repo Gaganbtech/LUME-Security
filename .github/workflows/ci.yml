@@ -44,7 +44,7 @@ jobs:
 
       - name: Run Pytest Test Suite
         run: |
-          pytest -v
+          python -m pytest -v --tb=short
 
       - name: Verify CLI Entrypoint
         run: |
