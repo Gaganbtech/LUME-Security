@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — TravLume Enterprise Key Portal{% endblock %}
+
+{% block nav_links %}
+  <a href="/dashboard" class="active">Dashboard</a>
+  {% if is_admin %}<a href="/admin/dashboard">Admin Panel</a>{% endif %}
+  <a href="/logout" class="btn btn-ghost btn-sm" style="margin-left:8px;">Sign out</a>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+
+  {# ── Page header ── #}
+  <div class="page-header">
+    <div class="gold-bar"></div>
+    <h1>Welcome, {{ user.username }}</h1>
+    <p class="text-muted">Manage your enterprise scan authorisation keys below.</p>
+    {% if is_admin %}
+      <span class="badge badge-admin" style="margin-top:10px;">Admin Account</span>
+    {% endif %}
+  </div>
+
+  {# ── Account pending approval notice ── #}
+  {% if not is_approved and not is_admin %}
+  <div class="notice notice-warning" style="margin-bottom:24px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <strong style="color:#92400e;">Account Pending Approval</strong>
+    </div>
+    <p style="color:#78350f; font-size:.88rem; margin:0;">
+      Your account is awaiting admin review. Once approved you can request Enterprise Keys.
+      You will be able to sign in as normal — key requests will be unlocked after approval.
+    </p>
+  </div>
+  {% endif %}
+
+  {# ── One-time key display (shown once immediately after approval) ── #}
+  {% if one_time_key %}
+  <div class="notice notice-success" style="margin-bottom:24px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      <strong style="font-size:.95rem; color:#14532d;">Your Enterprise Key — copy it now, shown once only</strong>
+    </div>
+    <div class="key-box">
+      <code>{{ one_time_key }}</code>
+    </div>
+    <div class="notice notice-warning" style="margin-top:12px; margin-bottom:0;">
+      <strong>⚠ This key will not be shown again.</strong>
+      Pass it to the LUME CLI:<br/>
+      <code>lume scan --target &lt;url&gt; --authorized --enterprise-key &lt;key&gt;</code><br/>
+      or set <code>LUME_ENTERPRISE_KEY=&lt;key&gt;</code> in your environment.
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Stats row ── #}
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num">{{ keys|length }}</div>
+      <div class="stat-label">Total Keys</div>
+    </div>
+    <div class="stat-card indigo">
+      <div class="stat-num">{{ keys|selectattr('is_consumed','equalto',false)|selectattr('is_revoked','equalto',false)|list|length }}</div>
+      <div class="stat-label">Available</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ keys|selectattr('is_consumed','equalto',true)|list|length }}</div>
+      <div class="stat-label">Consumed</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-num">{{ requests|selectattr('status','equalto','pending')|list|length }}</div>
+      <div class="stat-label">Pending Requests</div>
+    </div>
+  </div>
+
+  {# ── Request key card ── #}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div class="section-label">{% if is_admin %}Self-Issue{% else %}Key Request{% endif %}</div>
+        <div class="card-title">
+          {% if is_admin %}Generate an Enterprise Key{% else %}Request an Enterprise Key{% endif %}
+        </div>
+        <p class="text-muted" style="font-size:.88rem; max-width:520px;">
+          {% if is_admin %}
+            As an admin, your request is auto-approved. The key appears once below immediately.
+          {% elif not is_approved %}
+            <span style="color:#d97706; font-weight:600;">Account not yet approved</span> — an admin must approve your account before you can request keys.
+          {% elif has_pending %}
+            <span style="color:#d97706; font-weight:600;">You have a pending request</span> — wait for admin review before submitting another.
+          {% else %}
+            Submit a request. An admin will review and approve it. The key is shown once on approval.
+          {% endif %}
+        </p>
+      </div>
+      {% if is_admin %}
+      <form method="post" action="/keys/request" style="flex-shrink:0;">
+        <button type="submit" class="btn btn-primary">Generate Key &rsaquo;</button>
+      </form>
+      {% elif is_approved and not has_pending %}
+      <form method="post" action="/keys/request" style="flex-shrink:0;">
+        <button type="submit" class="btn btn-primary">Request Key &rsaquo;</button>
+      </form>
+      {% elif not is_approved %}
+      <span class="badge badge-pending" style="align-self:center;">Awaiting Account Approval</span>
+      {% else %}
+      <span class="badge badge-pending" style="align-self:center;">Request Pending</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Request history ── #}
+  {% if requests %}
+  <div class="card">
+    <h2>Request History</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Requested</th>
+            <th>Reviewed</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in requests %}
+          <tr>
+            <td>
+              {% if r.status == 'pending' %}
+                <span class="badge badge-pending">⏳ Pending</span>
+              {% elif r.status == 'approved' %}
+                <span class="badge badge-approved">✓ Approved</span>
+              {% elif r.status == 'rejected' %}
+                <span class="badge badge-rejected">✕ Rejected</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--body); font-size:.85rem;">
+              {{ r.requested_at.strftime('%d %b %Y, %H:%M') if r.requested_at else '—' }}
+            </td>
+            <td style="color:var(--muted); font-size:.85rem;">
+              {{ r.reviewed_at.strftime('%d %b %Y, %H:%M') if r.reviewed_at else '—' }}
+            </td>
+            <td style="font-size:.85rem; color:var(--muted);">
+              {% if r.rejection_reason %}
+                <span style="color:var(--danger);">{{ r.rejection_reason }}</span>
+              {% elif r.status == 'approved' %}Key issued — check below
+              {% elif r.status == 'pending' %}Awaiting admin review
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Your keys ── #}
+  <div class="card">
+    <h2>Your Keys</h2>
+    {% if keys %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Key ID</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Expires</th>
+            <th>Consumed</th>
+            <th>Used For</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in keys %}
+          <tr>
+            <td><code>{{ k.key_id }}…</code></td>
+            <td>
+              {% if k.is_revoked %}
+                <span class="badge badge-revoked">Revoked</span>
+              {% elif k.is_consumed %}
+                <span class="badge badge-consumed">Consumed</span>
+              {% elif k.is_expired %}
+                <span class="badge badge-expired">Expired</span>
+              {% else %}
+                <span class="badge badge-available">Available</span>
+              {% endif %}
+            </td>
+            <td style="font-size:.85rem; color:var(--body);">
+              {{ k.created_at.strftime('%d %b %Y') if k.created_at else '—' }}
+            </td>
+            <td style="font-size:.85rem; color:var(--muted);">
+              {{ k.expires_at.strftime('%d %b %Y') if k.expires_at else '—' }}
+            </td>
+            <td style="font-size:.85rem; color:var(--muted);">
+              {{ k.consumed_at.strftime('%d %b %Y') if k.consumed_at else '—' }}
+            </td>
+            <td style="font-size:.82rem; color:var(--muted); max-width:220px;
+                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              {{ k.consumed_by_scan_target or '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <p>No keys yet. Use the <strong>Request Key</strong> button above to get started.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

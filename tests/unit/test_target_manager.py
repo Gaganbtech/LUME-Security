@@ -147,11 +147,21 @@ class TestAuthorization:
             )
 
     def test_normalized_external_host_accepted_when_authorized(self):
-        """Explicit --authorized allows an external target after normalization."""
-        config = TargetManager.create_target_config(
-            endpoint="example.com",
-            authorized=True,
-        )
+        """Explicit --authorized allows an external target after normalization.
+        External targets now also require an enterprise key; mock the key client.
+        """
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+        from lume.enterprise.key_client import KeyConsumedReceipt
+        with patch(
+            "lume.core.target_manager.manager.validate_enterprise_key",
+            return_value=KeyConsumedReceipt(consumed_at=datetime.now(timezone.utc), message="OK"),
+        ):
+            config = TargetManager.create_target_config(
+                endpoint="example.com",
+                authorized=True,
+                enterprise_key="valid-test-key-abc",
+            )
         assert config.endpoint == "https://example.com"
 
     def test_localhost_http_auto_authorized(self):
@@ -193,10 +203,18 @@ class TestAuthorization:
             )
 
     def test_external_https_with_authorized_accepted(self):
-        config = TargetManager.create_target_config(
-            endpoint="https://ai-staging.client.com/v1/chat",
-            authorized=True,
-        )
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+        from lume.enterprise.key_client import KeyConsumedReceipt
+        with patch(
+            "lume.core.target_manager.manager.validate_enterprise_key",
+            return_value=KeyConsumedReceipt(consumed_at=datetime.now(timezone.utc), message="OK"),
+        ):
+            config = TargetManager.create_target_config(
+                endpoint="https://ai-staging.client.com/v1/chat",
+                authorized=True,
+                enterprise_key="valid-test-key-abc",
+            )
         assert config.endpoint == "https://ai-staging.client.com/v1/chat"
 
 

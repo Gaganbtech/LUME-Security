@@ -1,0 +1,57 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# SQLite database files (local dev only — never commit)
+*.db
+*.db-shm
+*.db-wal
+lume_keys.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & coverage
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE & OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# One-off verification and debug scripts (not part of the codebase)
+verify_*.py
+check_db.py
+test_supabase.py
+diag_*.py

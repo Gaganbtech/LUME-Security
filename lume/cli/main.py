@@ -1,7 +1,16 @@
 """Main CLI entry point for LUME using Typer and Rich."""
 
 import sys
+from pathlib import Path
 from typing import Optional
+
+# Load .env from the project root before anything else so that
+# LUME_KEY_SERVICE_URL and other env vars are available to all modules.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(Path(__file__).parent.parent.parent / ".env", override=False)
+except ImportError:
+    pass  # python-dotenv is an optional convenience; absence is not an error
 
 import typer
 from rich.panel import Panel
@@ -204,6 +213,19 @@ def scan(
         "--cert",
         help="Path to client certificate PEM file for mTLS authentication",
     ),
+    enterprise_key: Optional[str] = typer.Option(
+        None,
+        "--enterprise-key",
+        envvar="LUME_ENTERPRISE_KEY",
+        help=(
+            "One-time Enterprise Key for authorizing external scans "
+            "(env: LUME_ENTERPRISE_KEY). "
+            "If not set, you will be prompted interactively when scanning external targets. "
+            "Never pass the key as a shell argument in production — use the env var or the prompt."
+        ),
+        show_default=False,
+        hidden=False,
+    ),
 ):
     """Run an automated security scan against an authorized AI target endpoint."""
     print_banner(version=__version__)
@@ -221,6 +243,42 @@ def scan(
 
     verify_ssl = not insecure
 
+    # ── Enterprise key: resolve from env var, argument, or interactive prompt ──
+    # The key must NOT appear in shell history or process arguments.
+    # Priority: LUME_ENTERPRISE_KEY env var (via typer envvar=) > interactive prompt.
+    # The --enterprise-key flag is intentionally kept as a last resort for scripting,
+    # but users are strongly advised to use the env var or the prompt instead.
+    # We determine whether an external scan is likely before prompting, to avoid
+    # prompting for local targets.
+    _resolved_key = enterprise_key  # may be None, from env var, or from --enterprise-key arg
+
+    if _resolved_key is None:
+        # Pre-classify to decide whether to prompt; errors here are non-fatal —
+        # the real classification happens inside create_target_config().
+        _likely_external = True
+        try:
+            from lume.enterprise.target_classifier import (
+                TargetClassificationError,
+                is_local_target,
+            )
+            from lume.core.target_manager.manager import TargetValidationError as _TVE
+            from lume.core.target_manager.manager import TargetManager as _TM
+            _norm = _TM.validate_target_url(target)
+            _likely_external = not is_local_target(_norm)
+        except Exception:
+            _likely_external = True  # conservative: prompt if unsure
+
+        if _likely_external and authorized:
+            console.print(
+                "[bold yellow]Enterprise Key required for external scan.[/bold yellow]\n"
+                "[dim]Get a key at the LUME Key Service dashboard (LUME_KEY_SERVICE_URL).[/dim]"
+            )
+            _resolved_key = typer.prompt(
+                "Enterprise Key",
+                hide_input=True,
+                prompt_suffix=" (input hidden): ",
+            )
+
     # 1. Target Validation & Authorization
     try:
         target_config = TargetManager.create_target_config(
@@ -230,6 +288,7 @@ def scan(
             headers=parsed_headers,
             model_name=model,
             authorized=authorized,
+            enterprise_key=_resolved_key,
             proxy=proxy,
             verify=verify_ssl,
             cert=cert,
