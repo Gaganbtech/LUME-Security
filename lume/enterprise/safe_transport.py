@@ -60,15 +60,14 @@ import ipaddress
 import socket
 import typing
 
-import httpx
 from httpx._transports.default import HTTPTransport
 
 from lume.enterprise.target_classifier import _PRIVATE_NETWORKS
 
 try:
-    import httpcore
-    from httpcore._backends.sync import SyncBackend, SyncStream
+    import httpcore  # noqa: F401 — imported for availability check; not used directly
     from httpcore._backends.base import SOCKET_OPTION, NetworkStream
+    from httpcore._backends.sync import SyncBackend, SyncStream  # noqa: F401
     _HTTPCORE_AVAILABLE = True
 except ImportError:
     _HTTPCORE_AVAILABLE = False
@@ -189,5 +188,11 @@ else:
 
 # Expose helpers for key_client.py
 _PRIVATE_NETWORKS = _PRIVATE_NETWORKS
-_resolved_ips = lambda hostname: []      # not used in new design
-_any_ip_private = lambda ips: None       # not used in new design
+
+
+def _resolved_ips(hostname: str) -> list:  # noqa: F841 — not used in new design
+    return []
+
+
+def _any_ip_private(ips: list) -> None:  # noqa: F841 — not used in new design
+    return None

@@ -3,7 +3,7 @@
 All tests mock the key service and DNS resolution — no real network calls.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -13,7 +13,6 @@ from lume.core.target_manager.manager import (
     TargetValidationError,
 )
 from lume.enterprise.key_client import KeyConsumedReceipt, KeyValidationError
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

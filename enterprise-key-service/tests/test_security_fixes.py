@@ -25,17 +25,17 @@ _TEST_FERNET_KEY = _Fernet.generate_key().decode()
 os.environ["LUME_KS_ENCRYPTION_KEY"] = _TEST_FERNET_KEY
 os.environ.setdefault("LUME_KS_DB_URL", "sqlite:///:memory:")
 
-import ks.database as _db
-from ks.audit_worm import verify_audit_worm_policy
-from ks.auth import hash_password
-from ks.config import settings
-from ks.key_consume import KeyNotFound, consume_key_atomically
-from ks.key_crypto import (
+import ks.database as _db  # noqa: E402
+from ks.audit_worm import verify_audit_worm_policy  # noqa: E402
+from ks.auth import hash_password  # noqa: E402
+from ks.config import settings  # noqa: E402
+from ks.key_consume import KeyNotFound, consume_key_atomically  # noqa: E402
+from ks.key_crypto import (  # noqa: E402
     decrypt_pending_key,
     encrypt_pending_key,
     is_encrypted_token,
 )
-from ks.models import EnterpriseKey, KeyRequest, User
+from ks.models import EnterpriseKey, KeyRequest, User  # noqa: E402
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -65,7 +65,8 @@ def registered_user(client):
         user = User(username="testadmin", email="a@t.dev",
                      hashed_password=hash_password("Pass!99secure"),
                      is_active=True, is_approved=True, role="admin")
-        db.add(user); db.commit()
+        db.add(user)
+        db.commit()
     finally:
         db.close()
     resp = client.post("/auth/login", json={"username": "testadmin", "password": "Pass!99secure"})
@@ -115,8 +116,10 @@ class TestAtomicKeyConsumption:
 
         t1 = threading.Thread(target=try_consume)
         t2 = threading.Thread(target=try_consume)
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert sorted(results) == [200, 401], (
             f"Expected exactly one 200 and one 401, got: {results}"
@@ -137,8 +140,10 @@ class TestAtomicKeyConsumption:
                 results.append(r.status_code)
 
         threads = [threading.Thread(target=try_consume) for _ in range(10)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         successes = results.count(200)
         assert successes == 1, f"Expected 1 success, got {successes} from {results}"
@@ -260,8 +265,9 @@ class TestEncryptedPendingKey:
             eu = User(username="eu_enc_test", email="enc@t.dev",
                        hashed_password=hash_password("Pass!99secure"),
                        is_active=True, is_approved=True, role="enterprise_user")
-            db.add(eu); db.commit(); db.refresh(eu)
-            eu_id = eu.id
+            db.add(eu)
+            db.commit()
+            db.refresh(eu)
         finally:
             db.close()
 
@@ -295,7 +301,8 @@ class TestEncryptedPendingKey:
             eu = User(username="eu_otd_test", email="otd@t.dev",
                        hashed_password=hash_password("Pass!99secure"),
                        is_active=True, is_approved=True, role="enterprise_user")
-            db.add(eu); db.commit()
+            db.add(eu)
+            db.commit()
         finally:
             db.close()
 

@@ -10,15 +10,15 @@ These tests verify that _SafeSyncBackend.connect_tcp():
 """
 
 import socket
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 import httpx
 import pytest
 
 from lume.enterprise.safe_transport import (
+    _HTTPCORE_AVAILABLE,
     DNSRebindError,
     SafeSyncTransport,
-    _HTTPCORE_AVAILABLE,
 )
 
 pytestmark = pytest.mark.skipif(
@@ -26,7 +26,6 @@ pytestmark = pytest.mark.skipif(
 )
 
 from lume.enterprise.safe_transport import _SafeSyncBackend  # noqa: E402
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

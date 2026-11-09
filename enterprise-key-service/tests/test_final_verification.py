@@ -279,8 +279,8 @@ class TestUnauthenticatedAccess:
 class TestCrossUserIsolation:
     def test_user_a_cannot_see_user_b_keys(self, client):
         """User A's key listing must not include keys issued to User B."""
-        user_a = _create_user("isolation_user_a")
-        user_b = _create_user("isolation_user_b")
+        _create_user("isolation_user_a")
+        _create_user("isolation_user_b")
 
         token_a = _get_token(client, "isolation_user_a")
         token_b = _get_token(client, "isolation_user_b")
@@ -300,8 +300,8 @@ class TestCrossUserIsolation:
 
     def test_user_b_cannot_see_user_a_keys(self, client):
         """Symmetric check."""
-        user_a = _create_user("isolation_user_a2")
-        user_b = _create_user("isolation_user_b2")
+        _create_user("isolation_user_a2")
+        _create_user("isolation_user_b2")
 
         token_a = _get_token(client, "isolation_user_a2")
         token_b = _get_token(client, "isolation_user_b2")
@@ -317,8 +317,8 @@ class TestCrossUserIsolation:
 
     def test_user_a_token_issues_key_owned_by_a_not_b(self, client):
         """Keys issued with User A's token must be owned by User A."""
-        user_a = _create_user("owner_check_user_a")
-        user_b = _create_user("owner_check_user_b")
+        _create_user("owner_check_user_a")
+        _create_user("owner_check_user_b")
 
         token_a = _get_token(client, "owner_check_user_a")
         _issue_key(client, token_a)
@@ -332,7 +332,7 @@ class TestCrossUserIsolation:
 
     def test_validate_does_not_expose_owner_identity(self, client):
         """POST /keys/validate success must not reveal the owner's username."""
-        user = _create_user("validate_owner_check")
+        _create_user("validate_owner_check")
         token = _get_token(client, "validate_owner_check")
         key = _issue_key(client, token)
 

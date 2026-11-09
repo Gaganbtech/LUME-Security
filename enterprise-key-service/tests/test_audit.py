@@ -258,7 +258,7 @@ class TestAuditAPIReadOnly:
 
 class TestPortalEventsLogged:
     def test_signup_creates_audit_entry(self, client):
-        resp = client.post("/auth/login", json={"username": "x", "password": "x"})
+        client.post("/auth/login", json={"username": "x", "password": "x"})
         # Create a new user via signup
         client.post("/signup", data={
             "username": "audituser", "email": "au@test.dev",
@@ -288,8 +288,8 @@ class TestPortalEventsLogged:
     def test_key_revoked_creates_audit_entry(self, registered_user, client):
         _, _, token = registered_user
         # Issue then revoke a key
-        key_resp = client.post("/api/keys/issue",
-                                headers={"Authorization": f"Bearer {token}"}).json()
+        client.post("/api/keys/issue",
+                    headers={"Authorization": f"Bearer {token}"})
         all_keys = client.get("/api/admin/keys",
                                headers={"Authorization": f"Bearer {token}"}).json()
         key_db_id = next(k["id"] for k in all_keys["keys"] if not k["is_consumed"] and not k["is_revoked"])

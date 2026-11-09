@@ -152,6 +152,7 @@ class TestAuthorization:
         """
         from datetime import datetime, timezone
         from unittest.mock import patch
+
         from lume.enterprise.key_client import KeyConsumedReceipt
         with patch(
             "lume.core.target_manager.manager.validate_enterprise_key",
@@ -205,6 +206,7 @@ class TestAuthorization:
     def test_external_https_with_authorized_accepted(self):
         from datetime import datetime, timezone
         from unittest.mock import patch
+
         from lume.enterprise.key_client import KeyConsumedReceipt
         with patch(
             "lume.core.target_manager.manager.validate_enterprise_key",

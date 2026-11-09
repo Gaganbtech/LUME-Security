@@ -13,9 +13,7 @@ at transport time via SafeTransport.
 import ipaddress
 import re
 import socket
-from typing import Optional
 from urllib.parse import urlparse
-
 
 # ── Private / loopback IP ranges ──────────────────────────────────────────────
 

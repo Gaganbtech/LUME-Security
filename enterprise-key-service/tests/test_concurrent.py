@@ -28,7 +28,7 @@ def test_concurrent_validation_only_one_succeeds(registered_user, client):
     t1.join()
     t2.join()
 
-    status_codes = sorted(results)
+    status_codes = sorted(results)  # noqa: F841 — kept for debug readability
     # Exactly one 200, exactly one 401
     assert 200 in results, f"Expected one success, got: {results}"
     assert 401 in results, f"Expected one rejection, got: {results}"

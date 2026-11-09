@@ -257,12 +257,10 @@ def scan(
         # the real classification happens inside create_target_config().
         _likely_external = True
         try:
+            from lume.core.target_manager.manager import TargetManager as _TM
             from lume.enterprise.target_classifier import (
-                TargetClassificationError,
                 is_local_target,
             )
-            from lume.core.target_manager.manager import TargetValidationError as _TVE
-            from lume.core.target_manager.manager import TargetManager as _TM
             _norm = _TM.validate_target_url(target)
             _likely_external = not is_local_target(_norm)
         except Exception:

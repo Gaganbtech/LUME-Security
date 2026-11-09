@@ -35,7 +35,9 @@ def _create_user(client, username, role="enterprise_user", password="ValidPass!9
         user = User(username=username, email=f"{username}@test.dev",
                      hashed_password=hash_password(password), is_active=True,
                      is_approved=True, role=role)
-        db.add(user); db.commit(); db.refresh(user)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
         return user
     finally:
         db.close()
@@ -294,8 +296,8 @@ class TestKeyValidationStates:
 
 class TestCrossUserIsolation:
     def test_user_cannot_see_other_users_requests(self, client):
-        user_a = _create_user(client, "iso_user_a")
-        user_b = _create_user(client, "iso_user_b")
+        _create_user(client, "iso_user_a")
+        _create_user(client, "iso_user_b")
         token_a = _get_token(client, "iso_user_a")
         token_b = _get_token(client, "iso_user_b")
         # User A requests
@@ -380,7 +382,7 @@ class TestDeactivationRevokesKeys:
     def test_deactivation_revokes_unconsumed_keys(self, client, registered_user):
         _, _, admin_token = registered_user
         # Create a regular user with a key
-        user = _create_user(client, "deactivate_test_user")
+        _create_user(client, "deactivate_test_user")
         user_token = _get_token(client, "deactivate_test_user")
         # Admin issues key via request flow
         req = client.post("/api/keys/request", headers={"Authorization": f"Bearer {user_token}"}).json()

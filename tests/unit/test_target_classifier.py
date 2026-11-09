@@ -10,7 +10,6 @@ from lume.enterprise.target_classifier import (
     is_local_target,
 )
 
-
 # ── Private / loopback addresses ──────────────────────────────────────────────
 
 class TestLocalTargets:
