@@ -19,3 +19,9 @@ adapters:
 reporting:
   format: "table"
   output_dir: "reports"
+
+enterprise:
+  # URL of the running LUME Enterprise Key Service (local dev only)
+  # Override with LUME_KEY_SERVICE_URL environment variable
+  key_service_url: "http://localhost:8100"
+  key_service_timeout_seconds: 10

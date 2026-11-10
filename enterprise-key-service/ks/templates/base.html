@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}TravLume Enterprise Key Portal{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══ TravLume Exact Design System (extracted from screenshots) ═══
+       Background:        #ffffff (white), #f5f5f7 (light sections)
+       Navy heading:      #1a2d5a
+       Body text:         #374151
+       Muted text:        #6b7280
+       Gold accent:       #c9a84c
+       Indigo accent:     #3b4fce
+       Card bg:           #eff1f5
+       Border:            #e5e7eb
+       Input bg:          #f9fafb
+    ═══════════════════════════════════════════════════════════════════ */
+    :root {
+      --bg:          #ffffff;
+      --bg-section:  #f5f5f7;
+      --bg-card:     #eff1f5;
+      --bg-input:    #f9fafb;
+      --navy:        #1a2d5a;
+      --navy-dark:   #0f1e3d;
+      --body:        #374151;
+      --muted:       #6b7280;
+      --dim:         #9ca3af;
+      --gold:        #c9a84c;
+      --gold-dark:   #a07c2a;
+      --indigo:      #3b4fce;
+      --indigo-dark: #2d3eb0;
+      --border:      #e5e7eb;
+      --success:     #16a34a;
+      --warning:     #d97706;
+      --danger:      #dc2626;
+      --radius:      8px;
+      --radius-sm:   6px;
+      --shadow:      0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:   0 4px 12px rgba(0,0,0,.1);
+      --transition:  all 0.18s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px; line-height: 1.6;
+      background: var(--bg); color: var(--body);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Navigation ──────────────────────────────────────────────── */
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 64px;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 800; font-size: 1.15rem; color: var(--navy);
+      text-decoration: none; letter-spacing: -0.02em;
+    }
+    .nav-brand .trav { color: var(--navy); }
+    .nav-brand .lume { color: var(--gold); }
+    .nav-brand .portal-tag {
+      font-size: .7rem; font-weight: 500; color: var(--muted);
+      background: var(--bg-card); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 20px; margin-left: 8px;
+    }
+    .nav-links { display: flex; gap: 8px; align-items: center; }
+    .nav-links a {
+      color: var(--body); text-decoration: none; font-size: .88rem;
+      font-weight: 500; padding: 6px 14px; border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+    .nav-links a:hover { background: var(--bg-card); color: var(--navy); }
+    .nav-links a.active { color: var(--navy); font-weight: 600; }
+
+    /* ── Page layout ──────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; flex: 1; }
+    .container-narrow { max-width: 700px; margin: 0 auto; padding: 40px 24px; }
+
+    /* ── Page heading ─────────────────────────────────────────────── */
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 {
+      font-size: 1.75rem; font-weight: 800; color: var(--navy);
+      letter-spacing: -0.03em; margin-bottom: 6px;
+    }
+    .page-header p { color: var(--muted); font-size: .93rem; }
+    .gold-bar { width: 36px; height: 3px; background: var(--gold); border-radius: 2px; margin-bottom: 12px; }
+
+    /* ── Cards ────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      box-shadow: var(--shadow); margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 1rem; font-weight: 700; color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .card-sub { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
+
+    /* ── Typography ───────────────────────────────────────────────── */
+    h1 { font-size: 1.75rem; font-weight: 800; color: var(--navy); letter-spacing: -.03em; }
+    h2 { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin-bottom: 16px; }
+    h3 { font-size: .95rem; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+    p  { color: var(--body); margin-bottom: 12px; font-size: .93rem; }
+    p:last-child { margin-bottom: 0; }
+    .text-muted { color: var(--muted); }
+    .text-gold  { color: var(--gold); }
+    .text-navy  { color: var(--navy); }
+
+    /* ── Buttons ──────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 22px; border: none; border-radius: var(--radius-sm);
+      font-size: .88rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; font-family: inherit; transition: var(--transition);
+      white-space: nowrap;
+    }
+    /* Gold = primary CTA (matches "Get Free Consultation") */
+    .btn-primary {
+      background: var(--gold); color: var(--navy);
+    }
+    .btn-primary:hover { background: var(--gold-dark); box-shadow: 0 4px 12px rgba(201,168,76,.3); }
+
+    /* Navy outline = secondary CTA (matches "View Services") */
+    .btn-outline {
+      background: transparent; color: var(--navy);
+      border: 1.5px solid var(--navy);
+    }
+    .btn-outline:hover { background: var(--navy); color: #fff; }
+
+    /* Indigo = action buttons inside portal */
+    .btn-indigo { background: var(--indigo); color: #fff; }
+    .btn-indigo:hover { background: var(--indigo-dark); box-shadow: 0 4px 12px rgba(59,79,206,.25); }
+
+    .btn-ghost { background: var(--bg-card); color: var(--body); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+
+    .btn-danger-soft { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+    .btn-danger-soft:hover { background: #fee2e2; }
+
+    .btn-success-soft { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+    .btn-success-soft:hover { background: #dcfce7; }
+
+    .btn-sm { padding: 6px 14px; font-size: .82rem; }
+
+    /* ── Badges ───────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+    }
+    .badge-pending  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .badge-approved { background: #f0fdf4; color: #14532d; border: 1px solid #bbf7d0; }
+    .badge-rejected { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-consumed { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; }
+    .badge-revoked  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-available { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .badge-expired  { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+    .badge-admin { background: var(--navy); color: #fff; border: none; }
+    .badge-active { background: #f0fdf4; color: #14532d; border: 1px solid #bbf7d0; }
+    .badge-inactive { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    /* ── Notice / Alert boxes ─────────────────────────────────────── */
+    .notice {
+      padding: 16px 20px; border-radius: var(--radius-sm); margin-bottom: 18px;
+      border-left: 4px solid;
+    }
+    .notice p { margin-bottom: 6px; font-size: .88rem; }
+    .notice p:last-child { margin-bottom: 0; }
+    .notice-success { background: #f0fdf4; border-color: var(--success); }
+    .notice-warning { background: #fffbeb; border-color: var(--warning); }
+    .notice-error   { background: #fef2f2; border-color: var(--danger); }
+    .notice-info    { background: #eff6ff; border-color: var(--indigo); }
+    .notice code {
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: .9rem; word-break: break-all;
+      background: rgba(0,0,0,.05); padding: 2px 6px; border-radius: 4px;
+    }
+    .key-box {
+      padding: 16px 20px; margin: 12px 0;
+      background: var(--bg-section); border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .key-box code {
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 1rem; color: var(--indigo); word-break: break-all;
+      letter-spacing: .02em;
+    }
+
+    /* ── Tables ───────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead tr { border-bottom: 2px solid var(--border); }
+    th {
+      text-align: left; padding: 10px 16px;
+      color: var(--navy); font-size: .75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:hover { background: var(--bg-section); }
+    tbody tr:last-child td { border-bottom: none; }
+    td code {
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: .8rem; color: var(--indigo);
+      background: #eff6ff; padding: 2px 7px; border-radius: 4px;
+    }
+
+    /* ── Forms ────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: .85rem; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+    input[type=text], input[type=password], input[type=email], textarea, select {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg-input); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--body);
+      font-size: .9rem; font-family: inherit; transition: var(--transition);
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--indigo);
+      box-shadow: 0 0 0 3px rgba(59,79,206,.1);
+    }
+
+    /* ── Tabs ─────────────────────────────────────────────────────── */
+    .tabs { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 2px solid var(--border); }
+    .tab {
+      padding: 12px 22px; font-size: .88rem; font-weight: 600;
+      color: var(--muted); cursor: pointer; border: none; background: none;
+      font-family: inherit; transition: var(--transition);
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+    }
+    .tab:hover { color: var(--navy); }
+    .tab.active { color: var(--navy); border-bottom-color: var(--indigo); }
+
+    /* ── Section divider ──────────────────────────────────────────── */
+    .section-label {
+      display: inline-block; font-size: .7rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--navy); background: #eff1f5;
+      border: 1px solid var(--border); padding: 3px 10px;
+      border-radius: 4px; margin-bottom: 12px;
+    }
+
+    /* ── Stats / summary bar ─────────────────────────────────────── */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .stat-card .stat-num { font-size: 1.75rem; font-weight: 800; color: var(--navy); letter-spacing: -.03em; }
+    .stat-card .stat-label { font-size: .78rem; color: var(--muted); font-weight: 500; margin-top: 2px; }
+    .stat-card.gold .stat-num { color: var(--gold); }
+    .stat-card.indigo .stat-num { color: var(--indigo); }
+
+    /* ── Empty state ──────────────────────────────────────────────── */
+    .empty {
+      text-align: center; padding: 48px 20px; color: var(--muted);
+      border: 1.5px dashed var(--border); border-radius: var(--radius);
+    }
+    .empty svg { width: 40px; height: 40px; stroke: var(--dim); margin-bottom: 12px; }
+    .empty p { font-size: .9rem; }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    .footer {
+      padding: 20px 48px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .footer-brand { font-size: .82rem; font-weight: 700; color: var(--navy); }
+    .footer-brand span { color: var(--gold); }
+    .footer-tagline { font-size: .78rem; color: var(--muted); letter-spacing: .06em; }
+
+    /* ── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .nav { padding: 0 16px; }
+      .nav-brand .portal-tag { display: none; }
+      .container { padding: 24px 16px; }
+      .card { padding: 20px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      th, td { padding: 9px 10px; }
+      .btn { width: 100%; justify-content: center; }
+      .tabs { overflow-x: auto; }
+      .footer { flex-direction: column; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .nav-links .nav-text { display: none; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="wrapper">
+  {% block nav %}
+  <nav class="nav">
+    <a href="/" class="nav-brand">
+      <span class="trav">Trav</span><span class="lume">Lume</span>
+      <span class="portal-tag">Enterprise Key Portal</span>
+    </a>
+    <div class="nav-links">
+      {% block nav_links %}{% endblock %}
+    </div>
+  </nav>
+  {% endblock %}
+
+  {% block body %}{% endblock %}
+
+  <footer class="footer">
+    <div class="footer-brand"><span>Trav</span>Lume Tech — Enterprise Key Portal</div>
+    <div class="footer-tagline">BUILD. SECURE. SCALE.</div>
+  </footer>
+</div>
+</body>
+</html>
