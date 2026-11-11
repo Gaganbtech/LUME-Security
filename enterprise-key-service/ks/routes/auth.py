@@ -15,6 +15,7 @@ from ks.auth import create_access_token, hash_password, verify_password
 from ks.config import settings
 from ks.database import get_db
 from ks.models import User
+from ks.rate_limit import limiter
 from ks.schemas import LoginRequest, TokenResponse
 
 router = APIRouter()
@@ -34,6 +35,7 @@ async def login_page(request: Request):
 
 
 @router.post("/login", response_class=HTMLResponse)
+@limiter.limit("10/minute")
 async def login_form(
     request: Request,
     username: str = Form(...),
@@ -93,6 +95,7 @@ async def signup_page(request: Request):
 
 
 @router.post("/signup", response_class=HTMLResponse)
+@limiter.limit("5/minute")
 async def signup_form(
     request: Request,
     username: str = Form(...),
@@ -169,7 +172,9 @@ async def signup_form(
 
 
 @router.post("/auth/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def api_login(
+    request: Request,
     body: LoginRequest,
     db: Session = Depends(get_db),
 ):

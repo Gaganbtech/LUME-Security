@@ -22,6 +22,9 @@ def init_db(db_url: str | None = None) -> None:
     'sqlite:///file::memory:?cache=shared&uri=true' ensures all
     connections share the same in-memory database so that tables created
     by one session are visible to others.
+
+    PostgreSQL connections are pooled with settings from config — tuned
+    for Supabase free tier (≤ 20 simultaneous connections).
     """
     global _engine, SessionLocal
     url = db_url or settings.db_url
@@ -40,13 +43,37 @@ def init_db(db_url: str | None = None) -> None:
     # 1. Strip ?pgbouncer=true — it is a Prisma/JS hint not valid for psycopg2
     # 2. Force postgresql+psycopg2:// dialect — prevents SQLAlchemy from
     #    accidentally selecting psycopg v3 which is not installed
-    engine_kwargs: dict = {"connect_args": connect_args}
     if "pgbouncer=true" in url.lower():
         url = url.split("?")[0]
 
     if url.startswith("postgresql://") or url.startswith("postgres://"):
         url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
         url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+
+    # ── Connection pool configuration ─────────────────────────────────
+    # For SQLite we use StaticPool semantics (check_same_thread=False).
+    # For PostgreSQL we tune pool_size + max_overflow to avoid exhausting
+    # Supabase free tier's connection limit (~20 simultaneous connections).
+    #
+    #   pool_size=3      → 3 persistent connections
+    #   max_overflow=7   → up to 7 extra connections under burst load
+    #   pool_timeout=30  → raise after 30s waiting for a free connection
+    #   pool_recycle=1800→ recycle connections every 30 min (avoids stale-socket errors)
+    #
+    # Total maximum = pool_size + max_overflow = 10 connections per Render dyno.
+    # Well within Supabase free tier limits.
+    is_sqlite = "sqlite" in url or ":memory:" in url
+    if is_sqlite:
+        engine_kwargs: dict = {"connect_args": connect_args}
+    else:
+        engine_kwargs = {
+            "connect_args": connect_args,
+            "pool_size": settings.db_pool_size,
+            "max_overflow": settings.db_max_overflow,
+            "pool_timeout": settings.db_pool_timeout,
+            "pool_recycle": settings.db_pool_recycle,
+            "pool_pre_ping": True,   # detects stale connections before use
+        }
 
     _engine = create_engine(url, **engine_kwargs)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)

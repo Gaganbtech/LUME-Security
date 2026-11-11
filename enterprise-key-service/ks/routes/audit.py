@@ -71,6 +71,22 @@ async def verify_audit_chain(
     return result
 
 
+@router.get("/admin/audit/verify")
+async def verify_audit_chain_browser(
+    current_user: User = Depends(require_role_cookie("admin")),
+    db: Session = Depends(get_db),
+):
+    """Same as above but accepts the HTTP-only session cookie from the browser.
+
+    Used by the Verify Chain Integrity button in the audit log template.
+    JavaScript cannot read HttpOnly cookies, so the fetch uses
+    credentials:'include' to send the cookie automatically, and this
+    cookie-authenticated endpoint accepts it.
+    """
+    result = verify_chain(db)
+    return result
+
+
 @router.get("/api/admin/audit/worm-status")
 async def audit_worm_status(
     current_user: User = Depends(require_role("admin")),

@@ -193,7 +193,11 @@ class TestExpiredJWT:
     def test_expired_cookie_rejected_on_request_form(self, registered_user, client):
         username, _, _ = registered_user
         expired_token = self._expired_token(username)
-        resp = client.post("/keys/request", cookies={"access_token": expired_token})
+        resp = client.post(
+            "/keys/request",
+            cookies={"access_token": expired_token},
+            headers={"Origin": "http://localhost:8100"},
+        )
         assert resp.status_code == 401
 
 

@@ -16,23 +16,25 @@ Three security properties
 import hashlib
 import hmac
 import json
-import os
 from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from ks.config import settings
 from ks.models import AuditLog
 
 # ── Audit-specific secret (separate from session/JWT secret) ─────────────────
-# Falls back to LUME_KS_SECRET_KEY only if LUME_KS_AUDIT_SECRET is not set.
-# In production LUME_KS_AUDIT_SECRET must be set explicitly.
+# In production, config.py enforces that LUME_KS_AUDIT_SECRET is set independently.
+# In development, config.py falls back to LUME_KS_SECRET_KEY with a visible warning.
+# This function reads the resolved value from settings — no direct env access here.
 
 def _get_audit_secret() -> bytes:
-    secret = os.environ.get("LUME_KS_AUDIT_SECRET") or os.environ.get("LUME_KS_SECRET_KEY", "")
+    secret = settings.audit_secret
     if not secret:
         raise RuntimeError(
-            "LUME_KS_AUDIT_SECRET (or LUME_KS_SECRET_KEY) must be set for audit log signing."
+            "Audit secret is not configured. "
+            "Set LUME_KS_AUDIT_SECRET (must be different from LUME_KS_SECRET_KEY)."
         )
     return secret.encode()
 

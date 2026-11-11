@@ -26,6 +26,7 @@ from ks.database import get_db
 from ks.dependencies import get_current_user, get_current_user_from_bearer
 from ks.key_consume import KeyNotFound, consume_key_atomically
 from ks.models import EnterpriseKey, KeyRequest, User
+from ks.rate_limit import limiter
 from ks.schemas import (
     KeyIssueResponse,
     KeyListResponse,
@@ -83,26 +84,33 @@ async def dashboard(
 
     # Check for approved requests with pending one-time key display
     one_time_key = None
-    approved_with_pending = (
-        db.query(KeyRequest)
-        .filter(
-            KeyRequest.user_id == current_user.id,
-            KeyRequest.status == "approved",
-            KeyRequest.pending_display_key.isnot(None),
+
+    # First check the session (used by admin self-issue flow)
+    if request.session.get("one_time_key"):
+        one_time_key = request.session.pop("one_time_key")
+
+    # Then check DB pending_display_key (used by admin-approves-user flow)
+    if not one_time_key:
+        approved_with_pending = (
+            db.query(KeyRequest)
+            .filter(
+                KeyRequest.user_id == current_user.id,
+                KeyRequest.status == "approved",
+                KeyRequest.pending_display_key.isnot(None),
+            )
+            .first()
         )
-        .first()
-    )
-    if approved_with_pending:
-        raw_stored = approved_with_pending.pending_display_key
-        # Decrypt if encrypted, pass through if plaintext (dev without enc key)
-        from ks.key_crypto import decrypt_pending_key, is_encrypted_token
-        if raw_stored and is_encrypted_token(raw_stored):
-            one_time_key = decrypt_pending_key(raw_stored)
-        else:
-            one_time_key = raw_stored  # dev fallback: plaintext
-        # Clear immediately regardless of decrypt success
-        approved_with_pending.pending_display_key = None
-        db.commit()
+        if approved_with_pending:
+            raw_stored = approved_with_pending.pending_display_key
+            # Decrypt if encrypted, pass through if plaintext (dev without enc key)
+            from ks.key_crypto import decrypt_pending_key, is_encrypted_token
+            if raw_stored and is_encrypted_token(raw_stored):
+                one_time_key = decrypt_pending_key(raw_stored)
+            else:
+                one_time_key = raw_stored  # dev fallback: plaintext
+            # Clear immediately regardless of decrypt success
+            approved_with_pending.pending_display_key = None
+            db.commit()
 
     # User's requests (for status display)
     user_requests = (
@@ -389,7 +397,9 @@ async def list_my_keys(
 # ── JSON API — validate key (CLI) ─────────────────────────────────────────────
 
 @router.post("/keys/validate")
+@limiter.limit("10/minute")
 async def validate_key(
+    request: Request,
     body: KeyValidateRequest,
     db: Session = Depends(get_db),
 ):
@@ -400,6 +410,10 @@ async def validate_key(
     - SQLite: SELECT + UPDATE (serialised by SQLite write lock)
 
     The key is hashed server-side; plaintext is never logged or stored.
+
+    Key consumption and audit event are committed in a SINGLE transaction
+    so that a crash between them cannot leave a consumed key without an
+    audit trail.
     """
     try:
         consumed = consume_key_atomically(db, body.key, body.scan_target)
@@ -409,16 +423,25 @@ async def validate_key(
             detail={"status": "rejected", "reason": exc.reason, "detail": exc.msg},
         )
 
-    db.commit()
-
-    write_event(
-        db, "key_consumed",
-        actor_id=None,
-        target_user_id=consumed["owner_id"],
-        key_id=consumed["id"],
-        event_data={"scan_target": body.scan_target[:256], "key_id_short": consumed["key_id"]},
-    )
-    db.commit()
+    # Write the audit event in the SAME transaction as the consumption.
+    # If either operation fails, db.rollback() (in the except block) undoes both.
+    try:
+        write_event(
+            db, "key_consumed",
+            actor_id=None,
+            target_user_id=consumed["owner_id"],
+            key_id=consumed["id"],
+            event_data={"scan_target": body.scan_target[:256], "key_id_short": consumed["key_id"]},
+        )
+        # Single commit — atomic: both consumption and audit succeed or both roll back
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Key consumption succeeded but audit write failed. "
+                   "Transaction rolled back — key is NOT consumed. Try again.",
+        )
 
     return KeyValidateResponse(
         status="consumed",
