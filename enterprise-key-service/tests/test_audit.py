@@ -302,3 +302,128 @@ class TestPortalEventsLogged:
             assert entry is not None
         finally:
             db.close()
+
+
+# ── 8. Browser cookie endpoint for audit verification ─────────────────────────
+
+class TestAuditVerifyBrowserEndpoint:
+    """Tests for GET /admin/audit/verify — cookie-authenticated browser endpoint.
+
+    This endpoint exists because JavaScript cannot read HttpOnly cookies via
+    document.cookie. The browser fetch uses credentials:'include' to send the
+    cookie automatically, and this endpoint accepts it via require_role_cookie.
+
+    The existing GET /api/admin/audit/verify (Bearer-token) is kept unchanged.
+    Both endpoints call the same verify_chain() function — no logic duplication.
+    """
+
+    def test_browser_endpoint_requires_authentication(self, client):
+        """Unauthenticated GET /admin/audit/verify must return 401."""
+        resp = client.get("/admin/audit/verify")
+        assert resp.status_code == 401
+
+    def test_browser_endpoint_requires_admin_role(self, client, regular_user):
+        """Enterprise user cookie must be rejected with 403."""
+        _, _, token = regular_user
+        resp = client.get("/admin/audit/verify", cookies={"access_token": token})
+        assert resp.status_code == 403
+
+    def test_browser_endpoint_accepts_admin_cookie(self, registered_user, client):
+        """Admin cookie must be accepted and return valid chain result."""
+        _, _, token = registered_user
+        resp = client.get("/admin/audit/verify", cookies={"access_token": token})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "valid" in data
+        assert "total" in data
+        assert "errors" in data
+
+    def test_browser_endpoint_returns_same_result_as_bearer_endpoint(
+        self, registered_user, client
+    ):
+        """Both endpoints call the same verify_chain logic — results must match."""
+        _, _, token = registered_user
+
+        # Bearer endpoint
+        bearer_resp = client.get(
+            "/api/admin/audit/verify",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert bearer_resp.status_code == 200
+
+        # Cookie endpoint
+        cookie_resp = client.get(
+            "/admin/audit/verify",
+            cookies={"access_token": token},
+        )
+        assert cookie_resp.status_code == 200
+
+        # Both must return identical results
+        assert bearer_resp.json()["valid"] == cookie_resp.json()["valid"]
+        assert bearer_resp.json()["total"] == cookie_resp.json()["total"]
+
+    def test_browser_endpoint_detects_tampering(self, registered_user, client):
+        """Cookie endpoint must detect a tampered chain, same as Bearer endpoint."""
+        _, _, token = registered_user
+
+        # Create some audit entries
+        db = _db.SessionLocal()
+        try:
+            write_event(db, "key_requested", actor_id=1, target_user_id=2)
+            db.commit()
+            # Tamper with the entry
+            entry = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
+            entry.event_type = "tampered_event"
+            db.commit()
+        finally:
+            db.close()
+
+        resp = client.get("/admin/audit/verify", cookies={"access_token": token})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["valid"] is False
+        assert len(data["errors"]) >= 1
+
+    def test_bearer_endpoint_still_works_unchanged(self, registered_user, client):
+        """Confirm existing /api/admin/audit/verify (Bearer) is not broken."""
+        _, _, token = registered_user
+        resp = client.get(
+            "/api/admin/audit/verify",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        assert "valid" in resp.json()
+
+    def test_bearer_endpoint_rejects_no_token(self, client):
+        """Existing Bearer endpoint still rejects unauthenticated requests."""
+        resp = client.get("/api/admin/audit/verify")
+        assert resp.status_code == 401
+
+    def test_no_gettoken_function_in_template(self):
+        """Verify the broken _getToken() document.cookie approach was removed."""
+        from pathlib import Path
+        template = Path(
+            "d:/DREAM/4th/NEW AI SECURITY/LUME-Security-main"
+            "/enterprise-key-service/ks/templates/audit_log.html"
+        ).read_text(encoding="utf-8")
+
+        # _getToken must be completely absent — it was the broken implementation
+        assert "_getToken" not in template, (
+            "_getToken() reads document.cookie which cannot access HttpOnly cookies"
+        )
+
+        # document.cookie must only appear in JS comments, never as executable code
+        for line in template.splitlines():
+            stripped = line.strip()
+            if "document.cookie" in stripped:
+                assert stripped.startswith("//") or stripped.startswith("*"), (
+                    f"document.cookie must only appear in comments, found executable: {stripped}"
+                )
+
+        # Correct approach must be present
+        assert "credentials: 'include'" in template, (
+            "fetch must use credentials:'include' to send HttpOnly cookie automatically"
+        )
+        assert "/admin/audit/verify" in template, (
+            "Template must call the cookie-authenticated endpoint"
+        )

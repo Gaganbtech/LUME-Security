@@ -6,7 +6,13 @@ import pytest
 
 # Set env vars BEFORE any ks module is imported
 os.environ["LUME_KS_SECRET_KEY"] = "test-secret-key-do-not-use-in-production-ever"
+os.environ["LUME_KS_AUDIT_SECRET"] = "test-audit-secret-different-from-session"
 os.environ["LUME_KS_DB_URL"] = "sqlite:///:memory:"
+
+# Generate a Fernet key for tests that exercise pending_display_key encryption
+from cryptography.fernet import Fernet as _Fernet  # noqa: E402
+
+os.environ.setdefault("LUME_KS_ENCRYPTION_KEY", _Fernet.generate_key().decode())
 
 from contextlib import asynccontextmanager  # noqa: E402
 
@@ -18,6 +24,22 @@ from ks.config import settings  # noqa: E402
 @asynccontextmanager
 async def _noop_lifespan(app):
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Reset the rate limiter storage between tests so limits don't carry over."""
+    try:
+        from ks.rate_limit import limiter
+        limiter.reset()
+    except Exception:
+        pass
+    yield
+    try:
+        from ks.rate_limit import limiter
+        limiter.reset()
+    except Exception:
+        pass
 
 
 @pytest.fixture(scope="function")

@@ -34,7 +34,8 @@ class KeyNotFound(Exception):
 
 
 def _is_postgresql(db: Session) -> bool:
-    dialect = db.bind.dialect.name if db.bind else ""  # type: ignore[union-attr]
+    bind = db.get_bind()
+    dialect = bind.dialect.name if bind else ""
     return dialect == "postgresql"
 
 

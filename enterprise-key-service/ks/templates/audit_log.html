@@ -130,9 +130,23 @@ async function verifyChain() {
   result.style.display = 'none';
 
   try {
-    const resp = await fetch('/api/admin/audit/verify', {
-      headers: {'Content-Type': 'application/json'}
+    // Uses credentials:'include' so the browser automatically sends the
+    // HttpOnly access_token cookie. JavaScript cannot read HttpOnly cookies
+    // via document.cookie, so we never attempt that — we let the browser
+    // attach the cookie and hit the cookie-authenticated endpoint.
+    const resp = await fetch('/admin/audit/verify', {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
     });
+
+    if (resp.status === 401 || resp.status === 403) {
+      result.innerHTML = '<div style="color:#dc2626;font-size:.88rem;">Session expired or not authorised. Please sign in again.</div>';
+      result.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Verify Chain Integrity';
+      return;
+    }
+
     const data = await resp.json();
 
     if (data.valid) {

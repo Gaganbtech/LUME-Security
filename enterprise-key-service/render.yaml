@@ -22,6 +22,14 @@ services:
         value: https://your-domain.com
       - key: LUME_KS_TOKEN_EXPIRE_SECONDS
         value: "28800"
+      - key: LUME_KS_DB_POOL_SIZE
+        value: "3"
+      - key: LUME_KS_DB_MAX_OVERFLOW
+        value: "7"
+      - key: LUME_KS_DB_POOL_TIMEOUT
+        value: "30"
+      - key: LUME_KS_DB_POOL_RECYCLE
+        value: "1800"
     healthCheckPath: /
 
 databases:
