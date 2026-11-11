@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: travlume-enterprise-key-portal
+    runtime: python
+    rootDir: enterprise-key-service
+    buildCommand: pip install -e .
+    startCommand: uvicorn ks.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: LUME_KS_ENV
+        value: production
+      - key: LUME_KS_SECRET_KEY
+        generateValue: true
+      - key: LUME_KS_AUDIT_SECRET
+        generateValue: true
+      - key: LUME_KS_ENCRYPTION_KEY
+        generateValue: true
+      - key: LUME_KS_DB_URL
+        # Supabase transaction pooler — paste your full URL here on Render
+        # Format: postgresql://postgres.<project-ref>:[PASSWORD]@<region>.pooler.supabase.com:6543/postgres?pgbouncer=true
+        value: REPLACE_WITH_SUPABASE_TRANSACTION_POOLER_URL
+      - key: LUME_KS_ALLOWED_ORIGINS
+        value: https://your-domain.com
+      - key: LUME_KS_TOKEN_EXPIRE_SECONDS
+        value: "28800"
+      - key: LUME_KS_DB_POOL_SIZE
+        value: "3"
+      - key: LUME_KS_DB_MAX_OVERFLOW
+        value: "7"
+      - key: LUME_KS_DB_POOL_TIMEOUT
+        value: "30"
+      - key: LUME_KS_DB_POOL_RECYCLE
+        value: "1800"
+    healthCheckPath: /
+
+databases:
+  # Using external Supabase PostgreSQL — no Render-managed database needed
+  # Set LUME_KS_DB_URL in environment variables on Render

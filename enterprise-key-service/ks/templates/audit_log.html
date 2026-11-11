@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — TravLume Enterprise{% endblock %}
+{% block nav_links %}
+  <a href="/dashboard">My Dashboard</a>
+  <a href="/admin/dashboard">Admin Panel</a>
+  <a href="/admin/audit" class="active">Audit Log</a>
+  <a href="/logout" class="btn btn-ghost btn-sm" style="margin-left:8px;">Sign out</a>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+  <div class="page-header">
+    <div class="gold-bar"></div>
+    <h1>Audit Log</h1>
+    <p class="text-muted">
+      Tamper-evident log with HMAC-SHA256 signatures and hash chaining.
+      Every entry is signed; deletions or edits break the chain.
+    </p>
+  </div>
+
+  {# ── Chain verification panel ── #}
+  <div class="card" style="margin-bottom:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div class="card-title">Chain Integrity Verification</div>
+        <p class="text-muted" style="font-size:.85rem; margin:0;">
+          Click to re-compute all HMACs and verify every chain link on-demand.
+          A broken chain means an entry was modified or deleted.
+        </p>
+      </div>
+      <button id="verify-btn" onclick="verifyChain()"
+              class="btn btn-indigo" style="flex-shrink:0;">
+        Verify Chain Integrity
+      </button>
+    </div>
+    <div id="verify-result" style="margin-top:16px; display:none;"></div>
+  </div>
+
+  {# ── Audit entries ── #}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="margin:0;">Recent Events ({{ total }})</h2>
+      <span class="section-label">Read-only · WORM storage</span>
+    </div>
+
+    {% if entries %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Event</th>
+            <th>Actor</th>
+            <th>Affected User</th>
+            <th>Key</th>
+            <th>Request</th>
+            <th>Timestamp</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr>
+            <td style="color:var(--dim); font-size:.8rem;">{{ e.id }}</td>
+            <td>
+              {% set et = e.event_type %}
+              {% if et == 'key_consumed' %}
+                <span class="badge badge-consumed">key_consumed</span>
+              {% elif et == 'key_approved' %}
+                <span class="badge badge-approved">key_approved</span>
+              {% elif et == 'key_rejected' %}
+                <span class="badge badge-rejected">key_rejected</span>
+              {% elif et == 'key_revoked' %}
+                <span class="badge badge-revoked">key_revoked</span>
+              {% elif et == 'key_requested' %}
+                <span class="badge badge-pending">key_requested</span>
+              {% elif et == 'account_signup' %}
+                <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">account_signup</span>
+              {% elif et == 'account_approved' %}
+                <span class="badge badge-approved">account_approved</span>
+              {% elif et == 'account_rejected' %}
+                <span class="badge badge-rejected">account_rejected</span>
+              {% elif et == 'user_deactivated' %}
+                <span class="badge badge-revoked">user_deactivated</span>
+              {% elif et == 'user_role_changed' %}
+                <span class="badge badge-admin">role_changed</span>
+              {% else %}
+                <span class="badge" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;">{{ et }}</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:600; color:var(--navy); font-size:.85rem;">{{ e.actor }}</td>
+            <td style="color:var(--muted); font-size:.85rem;">{{ e.target_user }}</td>
+            <td style="font-size:.82rem;">
+              {% if e.key_id %}<code>#{{ e.key_id }}</code>{% else %}—{% endif %}
+            </td>
+            <td style="font-size:.82rem;">
+              {% if e.request_id %}<code>#{{ e.request_id }}</code>{% else %}—{% endif %}
+            </td>
+            <td style="font-size:.82rem; color:var(--muted); white-space:nowrap;">
+              {{ e.timestamp.strftime('%d %b %Y %H:%M') if e.timestamp else '—' }}
+            </td>
+            <td style="font-size:.78rem; color:var(--muted); max-width:200px;
+                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                title="{{ e.event_data or '' }}">
+              {{ e.event_data or '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+      </svg>
+      <p>No audit events yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+async function verifyChain() {
+  const btn = document.getElementById('verify-btn');
+  const result = document.getElementById('verify-result');
+  btn.disabled = true;
+  btn.textContent = 'Verifying…';
+  result.style.display = 'none';
+
+  try {
+    // Uses credentials:'include' so the browser automatically sends the
+    // HttpOnly access_token cookie. JavaScript cannot read HttpOnly cookies
+    // via document.cookie, so we never attempt that — we let the browser
+    // attach the cookie and hit the cookie-authenticated endpoint.
+    const resp = await fetch('/admin/audit/verify', {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (resp.status === 401 || resp.status === 403) {
+      result.innerHTML = '<div style="color:#dc2626;font-size:.88rem;">Session expired or not authorised. Please sign in again.</div>';
+      result.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Verify Chain Integrity';
+      return;
+    }
+
+    const data = await resp.json();
+
+    if (data.valid) {
+      result.innerHTML = `
+        <div style="padding:14px 18px;background:#f0fdf4;border:1px solid #bbf7d0;
+                     border-left:4px solid #16a34a;border-radius:6px;display:flex;
+                     align-items:center;gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5">
+            <path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>
+          </svg>
+          <span style="color:#14532d;font-weight:600;">
+            Chain intact — all ${data.total} entries verified. No tampering detected.
+          </span>
+        </div>`;
+    } else {
+      const errList = data.errors.map(e =>
+        `<li>Entry #${e.id} (${e.event_type}): ${e.issues.join(', ')}</li>`
+      ).join('');
+      result.innerHTML = `
+        <div style="padding:14px 18px;background:#fef2f2;border:1px solid #fecaca;
+                     border-left:4px solid #dc2626;border-radius:6px;">
+          <div style="color:#991b1b;font-weight:700;margin-bottom:8px;">
+            ⚠ Chain integrity FAILED — ${data.errors.length} broken entries detected
+          </div>
+          <ul style="margin:0;padding-left:20px;color:#991b1b;font-size:.85rem;">${errList}</ul>
+          <p style="margin-top:8px;font-size:.82rem;color:#7f1d1d;">
+            First broken entry ID: #${data.first_broken_id}.
+            Contact your security team immediately.
+          </p>
+        </div>`;
+    }
+  } catch (err) {
+    result.innerHTML = `<div style="color:#dc2626;font-size:.88rem;">Verification failed: ${err.message}</div>`;
+  }
+
+  result.style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Verify Chain Integrity';
+}
+</script>
+{% endblock %}

@@ -46,6 +46,11 @@ reports/*.sarif
 reports/*.md
 !reports/README.md
 
+# One-off manual test scripts (contain hardcoded dev credentials — never commit)
+tests/issue_key.py
+tests/manual_validate.py
+tests/validate_key.py
+
 # IDE & OS
 .DS_Store
 .vscode/

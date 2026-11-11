@@ -14,6 +14,8 @@ _REDACTION_PATTERNS = [
     (re.compile(r"(?i)bearer\s+[a-zA-Z0-9_.\-~+/=]{16,}"), "Bearer [REDACTED_TOKEN]"),
     # Basic Authorization
     (re.compile(r"(?i)basic\s+[a-zA-Z0-9+/=]{16,}"), "Basic [REDACTED_AUTH]"),
+    # LUME Enterprise Keys (base64url, ~43 chars)
+    (re.compile(r"[A-Za-z0-9_-]{40,}"), "[REDACTED_ENTERPRISE_KEY]"),
     # Generic Passwords and Secrets in URLs or key-values
     (re.compile(r"(?i)(password|secret|token|api[_-]?key)\s*[:=]\s*['\"]?([^'\"\s,;&]+)"), r"\1=[REDACTED]"),
     # AWS Access Keys

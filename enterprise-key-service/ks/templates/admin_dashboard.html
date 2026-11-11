@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — TravLume Enterprise Key Portal{% endblock %}
+
+{% block nav_links %}
+  <a href="/dashboard">My Dashboard</a>
+  <a href="/admin/dashboard" class="active">Admin Panel</a>
+  <a href="/admin/audit">Audit Log</a>
+  <a href="/logout" class="btn btn-ghost btn-sm" style="margin-left:8px;">Sign out</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .action-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .reject-form { display:flex; gap:6px; align-items:center; }
+  .reject-form input {
+    padding:6px 10px; border:1.5px solid #e5e7eb; border-radius:6px;
+    font-size:.82rem; background:#f9fafb; width:160px; font-family:inherit;
+  }
+  .reject-form input:focus { outline:none; border-color:#3b4fce; }
+  /* Why-choose cards style (from screenshot) */
+  .why-card {
+    background: #eff1f5; border:1px solid #e5e7eb; border-radius:8px;
+    padding:20px; display:flex; gap:14px; align-items:flex-start;
+  }
+  .why-card .icon {
+    width:36px; height:36px; border-radius:8px; background:#fff;
+    border:1px solid #e5e7eb; display:flex; align-items:center;
+    justify-content:center; flex-shrink:0;
+    color:#c9a84c; font-size:1.1rem;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+
+  {# ── Page header ── #}
+  <div class="page-header">
+    <div class="gold-bar"></div>
+    <h1>Admin Control Centre</h1>
+    <p class="text-muted">Review key requests, manage users, and monitor key usage.</p>
+    <span class="badge badge-admin" style="margin-top:10px;">Signed in as {{ user.username }}</span>
+  </div>
+
+  {# ── Summary stats ── #}
+  <div class="stats-row" style="margin-bottom:32px;">
+    <div class="stat-card">
+      <div class="stat-num" style="color:#d97706;">{{ pending_account_users|length }}</div>
+      <div class="stat-label">Awaiting Account Approval</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #d97706;">
+      <div class="stat-num" style="color:#d97706;">{{ pending_requests|length }}</div>
+      <div class="stat-label">Pending Key Requests</div>
+    </div>
+    <div class="stat-card indigo">
+      <div class="stat-num">{{ users|length }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-num">{{ keys|selectattr('is_consumed','equalto',true)|list|length }}</div>
+      <div class="stat-label">Scans Authorised</div>
+    </div>
+  </div>
+
+  {# ── Tabs ── #}
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('accounts',this)">
+      Account Approvals
+      {% if pending_account_users|length > 0 %}
+      <span style="background:#d97706;color:#fff;font-size:.68rem;font-weight:700;
+                   padding:1px 7px;border-radius:20px;margin-left:6px;">
+        {{ pending_account_users|length }}
+      </span>
+      {% endif %}
+    </button>
+    <button class="tab" onclick="showTab('requests',this)">
+      Key Requests
+      {% if pending_requests|length > 0 %}
+      <span style="background:#d97706;color:#fff;font-size:.68rem;font-weight:700;
+                   padding:1px 7px;border-radius:20px;margin-left:6px;">
+        {{ pending_requests|length }}
+      </span>
+      {% endif %}
+    </button>
+    <button class="tab" onclick="showTab('users',this)">Users</button>
+    <button class="tab" onclick="showTab('audit',this)">Key Audit</button>
+  </div>
+
+  {# ══ TAB 0: Pending Account Approvals ══════════════════════════════════════ #}
+  <div id="tab-accounts" style="display:block;">
+    <div class="card">
+      <h2>Pending Account Approvals</h2>
+      <p class="text-muted" style="margin-bottom:20px; font-size:.88rem;">
+        New users who signed up and are waiting for account activation.
+        Approve to allow them to sign in and request keys. Reject to block them permanently.
+      </p>
+
+      {% if pending_account_users %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Username</th><th>Email</th><th>Registered</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for u in pending_account_users %}
+            <tr>
+              <td style="font-weight:600; color:var(--navy);">{{ u.username }}</td>
+              <td style="color:var(--muted); font-size:.85rem;">{{ u.email }}</td>
+              <td style="color:var(--muted); font-size:.85rem;">
+                {{ u.created_at.strftime('%d %b %Y, %H:%M UTC') if u.created_at else '—' }}
+              </td>
+              <td>
+                <div class="action-row">
+                  <form method="post" action="/admin/users/{{ u.id }}/approve-account">
+                    <button type="submit" class="btn btn-success-soft btn-sm">✓ Approve Account</button>
+                  </form>
+                  <form method="post" action="/admin/users/{{ u.id }}/reject-account">
+                    <button type="submit" class="btn btn-danger-soft btn-sm"
+                            onclick="return confirm('Reject and block {{ u.username }}?')">✕ Reject</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p>No accounts pending approval.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════════════════
+     TAB 1: Pending Requests
+  ══════════════════════════════════════════════════════════════════════ #}
+  <div id="tab-requests" style="display:none;">
+    <div class="card">
+      <h2>Pending Key Requests</h2>
+      <p class="text-muted" style="margin-bottom:20px; font-size:.88rem;">
+        Approve to auto-generate and assign a key. Reject with a reason so the user can reapply.
+      </p>
+
+      {% if pending_requests %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Requested</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in pending_requests %}
+            <tr>
+              <td>
+                <div style="font-weight:600; color:var(--navy);">{{ r.username }}</div>
+              </td>
+              <td style="color:var(--muted); font-size:.85rem;">
+                {{ r.requested_at.strftime('%d %b %Y, %H:%M UTC') if r.requested_at else '—' }}
+              </td>
+              <td>
+                <div class="action-row">
+                  <form method="post" action="/admin/requests/{{ r.id }}/approve">
+                    <button type="submit" class="btn btn-success-soft btn-sm">
+                      ✓ Approve &amp; Issue
+                    </button>
+                  </form>
+                  <form method="post" action="/admin/requests/{{ r.id }}/reject" class="reject-form">
+                    <input type="text" name="reason" placeholder="Rejection reason…" required />
+                    <button type="submit" class="btn btn-danger-soft btn-sm">✕ Reject</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p>No pending requests — all caught up.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════════════════
+     TAB 2: User Management
+  ══════════════════════════════════════════════════════════════════════ #}
+  <div id="tab-users" style="display:none;">
+    <div class="card">
+      <h2>User Management</h2>
+      <p class="text-muted" style="margin-bottom:20px; font-size:.88rem;">
+        Change roles or deactivate accounts. Deactivating a user revokes all their unconsumed keys.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Keys</th>
+              <th>Pending</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>
+                <div style="font-weight:600; color:var(--navy);">{{ u.username }}</div>
+                {% if u.id == user.id %}
+                  <div style="font-size:.72rem; color:var(--muted); margin-top:2px;">(you)</div>
+                {% endif %}
+              </td>
+              <td style="color:var(--muted); font-size:.85rem;">{{ u.email }}</td>
+              <td>
+                {% if u.role == 'admin' %}
+                  <span class="badge badge-admin">Admin</span>
+                {% else %}
+                  <span class="badge" style="background:#eff1f5; color:#374151;
+                                             border:1px solid #e5e7eb;">User</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u.is_active %}
+                  {% if u.is_approved %}
+                    <span class="badge badge-active">Active</span>
+                  {% else %}
+                    <span class="badge badge-pending">Pending Approval</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge badge-inactive">Inactive</span>
+                {% endif %}
+              </td>
+              <td style="font-weight:600; color:var(--navy);">{{ u.key_count }}</td>
+              <td>
+                {% if u.pending_request_count > 0 %}
+                  <span class="badge badge-pending">{{ u.pending_request_count }}</span>
+                {% else %}
+                  <span style="color:var(--muted);">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u.id == user.id %}
+                  <span style="color:var(--muted); font-size:.82rem; font-style:italic;">Cannot edit self</span>
+                {% else %}
+                  <div class="action-row">
+                    <form method="post" action="/admin/users/{{ u.id }}/role"
+                          style="display:flex; gap:6px; align-items:center;">
+                      <select name="role"
+                              style="padding:5px 8px; border:1.5px solid #e5e7eb; border-radius:6px;
+                                      font-size:.82rem; background:#f9fafb; font-family:inherit;">
+                        <option value="enterprise_user" {% if u.role == 'enterprise_user' %}selected{% endif %}>User</option>
+                        <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                      </select>
+                      <button type="submit" class="btn btn-ghost btn-sm">Set</button>
+                    </form>
+                    {% if u.is_active %}
+                    <form method="post" action="/admin/users/{{ u.id }}/deactivate">
+                      <button type="submit" class="btn btn-danger-soft btn-sm"
+                              onclick="return confirm('Deactivate {{ u.username }}? This will revoke all their unconsumed keys.')">
+                        Deactivate
+                      </button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="/admin/users/{{ u.id }}/activate">
+                      <button type="submit" class="btn btn-success-soft btn-sm">Activate</button>
+                    </form>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════════════════
+     TAB 3: Key Audit Log
+  ══════════════════════════════════════════════════════════════════════ #}
+  <div id="tab-audit" style="display:none;">
+    <div class="card">
+      <h2>Key Audit Log</h2>
+      <p class="text-muted" style="margin-bottom:20px; font-size:.88rem;">
+        Full audit trail for all issued keys. Revoke any available key below.
+      </p>
+
+      {% if keys %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Key ID</th>
+              <th>Owner</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Consumed</th>
+              <th>Scan Target</th>
+              <th>Revoked</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in keys %}
+            <tr>
+              <td><code>{{ k.key_id }}…</code></td>
+              <td style="font-weight:600; color:var(--navy);">{{ k.owner_username }}</td>
+              <td>
+                {% if k.is_revoked %}
+                  <span class="badge badge-revoked">Revoked</span>
+                {% elif k.is_consumed %}
+                  <span class="badge badge-consumed">Consumed</span>
+                {% else %}
+                  <span class="badge badge-available">Available</span>
+                {% endif %}
+              </td>
+              <td style="font-size:.83rem; color:var(--body);">
+                {{ k.created_at.strftime('%d %b %Y') if k.created_at else '—' }}
+              </td>
+              <td style="font-size:.83rem; color:var(--muted);">
+                {{ k.expires_at.strftime('%d %b %Y') if k.expires_at else '—' }}
+              </td>
+              <td style="font-size:.83rem; color:var(--muted);">
+                {{ k.consumed_at.strftime('%d %b %Y') if k.consumed_at else '—' }}
+              </td>
+              <td style="font-size:.8rem; color:var(--muted); max-width:180px;
+                          overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                {{ k.consumed_by_scan_target or '—' }}
+              </td>
+              <td style="font-size:.83rem; color:var(--muted);">
+                {% if k.revoked_at %}
+                  {{ k.revoked_at.strftime('%d %b %Y') }}
+                  {% if k.revoked_by_username %}
+                  <div style="font-size:.75rem;">by {{ k.revoked_by_username }}</div>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if not k.is_consumed and not k.is_revoked %}
+                <form method="post" action="/admin/keys/{{ k.id }}/revoke">
+                  <button type="submit" class="btn btn-danger-soft btn-sm"
+                          onclick="return confirm('Revoke key {{ k.key_id }}? This cannot be undone.')">
+                    Revoke
+                  </button>
+                </form>
+                {% else %}
+                <span style="color:var(--dim); font-size:.82rem;">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <p>No keys have been issued yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showTab(name, el) {
+    document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+    document.getElementById('tab-' + name).style.display = 'block';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+{% endblock %}

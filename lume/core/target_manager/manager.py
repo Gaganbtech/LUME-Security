@@ -6,6 +6,35 @@ from urllib.parse import urlparse
 
 from lume.adapters.base import TargetConfig
 
+# Enterprise modules imported at module level so they can be patched in tests.
+# Both are guarded with try/except so the rest of the package works even if
+# the enterprise sub-package is not present (e.g. stripped installs).
+try:
+    from lume.enterprise.target_classifier import (  # noqa: F401
+        TargetClassificationError,
+        is_local_target,
+    )
+    _ENTERPRISE_CLASSIFIER_AVAILABLE = True
+except ImportError:
+    _ENTERPRISE_CLASSIFIER_AVAILABLE = False
+    TargetClassificationError = Exception  # type: ignore[assignment,misc]
+
+    def is_local_target(url: str, dns_timeout: float = 5.0) -> bool:  # type: ignore[misc]
+        raise NotImplementedError
+
+try:
+    from lume.enterprise.key_client import (  # noqa: F401
+        KeyValidationError,
+        validate_enterprise_key,
+    )
+    _ENTERPRISE_KEY_CLIENT_AVAILABLE = True
+except ImportError:
+    _ENTERPRISE_KEY_CLIENT_AVAILABLE = False
+    KeyValidationError = Exception  # type: ignore[assignment,misc]
+
+    def validate_enterprise_key(*args, **kwargs):  # type: ignore[misc]
+        raise NotImplementedError
+
 
 class TargetAuthorizationError(Exception):
     """Raised when target authorization is not explicitly granted or validated."""
@@ -163,8 +192,17 @@ class TargetManager:
     ) -> bool:
         """Verify that testing is authorized against the target.
 
+        Uses the enterprise target classifier (resolves DNS) to determine
+        whether the target is local or external.  For local targets the
+        existing allowlist check is preserved.  For external targets the
+        caller must pass authorized=True.
+
+        NOTE: This method only checks *explicit user authorization* (the
+        --authorized flag).  Enterprise key validation is a separate step
+        performed in create_target_config() after this check passes.
+
         Args:
-            target_url: Target URL to test.
+            target_url: Normalized target URL.
             authorized: Flag confirming explicit user authorization.
 
         Returns:
@@ -173,26 +211,31 @@ class TargetManager:
         Raises:
             TargetAuthorizationError: If authorization is denied or missing.
         """
-        # Localhost/loopback addresses in test environments are automatically permitted
-        parsed = urlparse(target_url)
-        is_loopback = parsed.hostname in (
-            "localhost",
-            "127.0.0.1",
-            "::1",
-            "test-ai",
-            "vulnerable-ai",
-            "protected-ai",
-        )
-
-        if is_loopback:
-            return True
+        # Use the enterprise classifier which resolves DNS and checks IP ranges.
+        # Fall back to the legacy hostname allowlist if classifier raises (e.g.
+        # DNS unavailable in test environments).
+        _fallback_hosts = frozenset({
+            "localhost", "127.0.0.1", "::1",
+            "test-ai", "vulnerable-ai", "protected-ai",
+        })
+        if _ENTERPRISE_CLASSIFIER_AVAILABLE:
+            try:
+                if is_local_target(target_url):
+                    return True
+            except TargetClassificationError:
+                # DNS unavailable — fall back to hostname allowlist
+                if urlparse(target_url).hostname in _fallback_hosts:
+                    return True
+        else:
+            if urlparse(target_url).hostname in _fallback_hosts:
+                return True
 
         if authorized:
             return True
 
         raise TargetAuthorizationError(
-            f"Active security scanning against non-local target '{target_url}' requires explicit authorization. "
-            f"Use the --authorized flag or provide explicit consent before scanning."
+            f"Active security scanning against external target '{target_url}' requires explicit authorization. "
+            f"Use the --authorized flag after verifying you have permission to scan this target."
         )
 
     @classmethod
@@ -204,15 +247,61 @@ class TargetManager:
         headers: Optional[dict] = None,
         model_name: Optional[str] = None,
         authorized: bool = False,
+        enterprise_key: Optional[str] = None,
         proxy: Optional[str] = None,
         verify: bool = True,
         cert: Optional[str] = None,
         delay_ms: int = 0,
         user_agent: Optional[str] = None,
     ) -> TargetConfig:
-        """Validate target and build a safe TargetConfig object."""
+        """Validate target, check authorization, consume enterprise key (external only), and build TargetConfig.
+
+        For external targets both authorized=True AND a valid enterprise_key are required.
+        For local/private targets neither is required (existing behavior preserved).
+
+        The enterprise key is consumed atomically before the TargetConfig is returned.
+        If consumption fails the scan is blocked; the key remains consumed if the service
+        reported success before the error (fail-closed).
+        """
         normalized_url = cls.validate_target_url(endpoint)
+
+        # Determine if target is external using the DNS-aware classifier
+        _fallback_hosts = frozenset({
+            "localhost", "127.0.0.1", "::1",
+            "test-ai", "vulnerable-ai", "protected-ai",
+        })
+        is_external = True
+        if _ENTERPRISE_CLASSIFIER_AVAILABLE:
+            try:
+                is_external = not is_local_target(normalized_url)
+            except TargetClassificationError:
+                h = (urlparse(normalized_url).hostname or "")
+                is_external = h not in _fallback_hosts
+        else:
+            h = (urlparse(normalized_url).hostname or "")
+            is_external = h not in _fallback_hosts
+
+        # Step 1: explicit user authorization (--authorized flag)
         cls.verify_authorization(normalized_url, authorized=authorized)
+
+        # Step 2: enterprise key validation (external targets only)
+        if is_external:
+            if not enterprise_key or not enterprise_key.strip():
+                raise TargetAuthorizationError(
+                    f"An Enterprise Key is required to scan external target '{normalized_url}'. "
+                    f"Sign in to the LUME Key Service to obtain a key, "
+                    f"then pass it with --enterprise-key or LUME_ENTERPRISE_KEY."
+                )
+            # Consume the key atomically.  Any error blocks the scan.
+            try:
+                validate_enterprise_key(
+                    plaintext_key=enterprise_key.strip(),
+                    scan_target=normalized_url,
+                )
+            except Exception as exc:
+                # Re-raise as TargetAuthorizationError so the CLI catches it uniformly.
+                # Do NOT include the plaintext key in the error message.
+                raise TargetAuthorizationError(str(exc)) from exc
 
         return TargetConfig(
             endpoint=normalized_url,
