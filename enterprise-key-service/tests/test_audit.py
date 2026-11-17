@@ -402,9 +402,8 @@ class TestAuditVerifyBrowserEndpoint:
     def test_no_gettoken_function_in_template(self):
         """Verify the broken _getToken() document.cookie approach was removed."""
         from pathlib import Path
-        template = Path(
-            "d:/DREAM/4th/NEW AI SECURITY/LUME-Security-main"
-            "/enterprise-key-service/ks/templates/audit_log.html"
+        template = (
+            Path(__file__).parent.parent / "ks" / "templates" / "audit_log.html"
         ).read_text(encoding="utf-8")
 
         # _getToken must be completely absent — it was the broken implementation

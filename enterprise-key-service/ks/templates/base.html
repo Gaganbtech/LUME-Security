@@ -8,39 +8,50 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    /* ═══ TravLume Exact Design System (extracted from screenshots) ═══
-       Background:        #ffffff (white), #f5f5f7 (light sections)
-       Navy heading:      #1a2d5a
+    /* ═══ TravLume Official Design System (www.travlume.com) ═══
+       Primary Navy:      #242D53
+       Dark Navy:         #161D36
+       Navy Light:        #2E3A68
+       Brand Gold:        #D2B68D
+       Gold Hover:        #C4A67D
+       Gold Light/Tint:   #F7F3EC / rgba(210,182,141,0.15)
+       Tech Blue:         #3A5BFF
+       Tech Blue Dark:    #2E4AE8
+       Tech Blue Light:   #EEF2FF
+       Border:            #E5E7EB
        Body text:         #374151
-       Muted text:        #6b7280
-       Gold accent:       #c9a84c
-       Indigo accent:     #3b4fce
-       Card bg:           #eff1f5
-       Border:            #e5e7eb
-       Input bg:          #f9fafb
+       Muted text:        #6B7280
+       Success:           #00C758
+       Backgrounds:       #FFFFFF (main), #F8F9FC (light section)
     ═══════════════════════════════════════════════════════════════════ */
     :root {
       --bg:          #ffffff;
-      --bg-section:  #f5f5f7;
-      --bg-card:     #eff1f5;
-      --bg-input:    #f9fafb;
-      --navy:        #1a2d5a;
-      --navy-dark:   #0f1e3d;
+      --bg-section:  #f8f9fc;
+      --bg-card:     #ffffff;
+      --bg-input:    #ffffff;
+      --navy:        #242d53;
+      --navy-dark:   #161d36;
+      --navy-light:  #2e3a68;
       --body:        #374151;
       --muted:       #6b7280;
       --dim:         #9ca3af;
-      --gold:        #c9a84c;
-      --gold-dark:   #a07c2a;
-      --indigo:      #3b4fce;
-      --indigo-dark: #2d3eb0;
+      --gold:        #d2b68d;
+      --gold-dark:   #c4a67d;
+      --gold-light:  #f7f3ec;
+      --gold-tint:   rgba(210, 182, 141, 0.15);
+      --blue:        #3a5bff;
+      --blue-dark:   #2e4ae8;
+      --blue-light:  #eef2ff;
+      --indigo:      #3a5bff;
+      --indigo-dark: #2e4ae8;
       --border:      #e5e7eb;
-      --success:     #16a34a;
+      --success:     #00c758;
       --warning:     #d97706;
       --danger:      #dc2626;
       --radius:      8px;
       --radius-sm:   6px;
-      --shadow:      0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-      --shadow-md:   0 4px 12px rgba(0,0,0,.1);
+      --shadow:      0 1px 3px rgba(36,45,83,.06), 0 1px 2px rgba(36,45,83,.04);
+      --shadow-md:   0 4px 14px rgba(36,45,83,.08);
       --transition:  all 0.18s ease;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -126,8 +137,9 @@
     /* Gold = primary CTA (matches "Get Free Consultation") */
     .btn-primary {
       background: var(--gold); color: var(--navy);
+      font-weight: 700;
     }
-    .btn-primary:hover { background: var(--gold-dark); box-shadow: 0 4px 12px rgba(201,168,76,.3); }
+    .btn-primary:hover { background: var(--gold-dark); box-shadow: 0 4px 12px rgba(210,182,141,.35); }
 
     /* Navy outline = secondary CTA (matches "View Services") */
     .btn-outline {
@@ -136,9 +148,9 @@
     }
     .btn-outline:hover { background: var(--navy); color: #fff; }
 
-    /* Indigo = action buttons inside portal */
-    .btn-indigo { background: var(--indigo); color: #fff; }
-    .btn-indigo:hover { background: var(--indigo-dark); box-shadow: 0 4px 12px rgba(59,79,206,.25); }
+    /* Tech Blue = action buttons inside portal */
+    .btn-indigo { background: var(--blue); color: #fff; }
+    .btn-indigo:hover { background: var(--blue-dark); box-shadow: 0 4px 12px rgba(58,91,255,.28); }
 
     .btn-ghost { background: var(--bg-card); color: var(--body); border: 1px solid var(--border); }
     .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
@@ -302,6 +314,10 @@
   {% block nav %}
   <nav class="nav">
     <a href="/" class="nav-brand">
+      <svg width="22" height="16" viewBox="0 0 589 423" fill="none" style="vertical-align:middle; margin-right:2px;">
+        <path d="M0 0 C0.85 0.15 1.7 0.31 2.59 0.47 C33.36 6.22 60.8 18.53 85.35 37.93 C88 40.05 88 40.05 91 42 C91 42.66 91 43.32 91 44 C92.32 44.66 93.64 45.32 95 46 C95 46.99 95 47.98 95 49 C89.5 48.47 85.69 46.45 81 43.81 C37.81 20.45 -10.14 17.7 -56.84 31.37 C-74.85 36.9 -92.17 45.34 -107 57 C-152.78 36.27 -120.7 21.09 -98 11 C-53.16 -2.75 -25.71 -4.83 0 0 Z" fill="#D2B68D" transform="translate(294,21)"/>
+        <circle cx="294" cy="210" r="140" stroke="#242D53" stroke-width="36" fill="none"/>
+      </svg>
       <span class="trav">Trav</span><span class="lume">Lume</span>
       <span class="portal-tag">Enterprise Key Portal</span>
     </a>
@@ -314,7 +330,7 @@
   {% block body %}{% endblock %}
 
   <footer class="footer">
-    <div class="footer-brand"><span>Trav</span>Lume Tech — Enterprise Key Portal</div>
+    <div class="footer-brand"><span class="trav">Trav</span><span class="lume" style="color:var(--gold);">Lume</span> Tech Private Limited — Enterprise Key Portal</div>
     <div class="footer-tagline">BUILD. SECURE. SCALE.</div>
   </footer>
 </div>

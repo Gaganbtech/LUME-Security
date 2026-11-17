@@ -220,13 +220,18 @@ def scan(
         "--enterprise-key",
         envvar="LUME_ENTERPRISE_KEY",
         help=(
-            "One-time Enterprise Key for authorizing external scans "
+            "One-time Enterprise Key for authorizing scans "
             "(env: LUME_ENTERPRISE_KEY). "
-            "If not set, you will be prompted interactively when scanning external targets. "
+            "If not set, you will be prompted interactively when scanning. "
             "Never pass the key as a shell argument in production — use the env var or the prompt."
         ),
         show_default=False,
         hidden=False,
+    ),
+    require_key: bool = typer.Option(
+        False,
+        "--require-key",
+        help="Enforce enterprise key requirement even for local/test targets.",
     ),
 ):
     """Run an automated security scan against an authorized AI target endpoint."""
@@ -253,9 +258,10 @@ def scan(
     # Priority: LUME_ENTERPRISE_KEY env var (via typer envvar=) > interactive prompt.
     # The --enterprise-key flag is intentionally kept as a last resort for scripting,
     # but users are strongly advised to use the env var or the prompt instead.
-    # We determine whether an external scan is likely before prompting, to avoid
-    # prompting for local targets.
     _resolved_key = enterprise_key  # may be None, from env var, or from --enterprise-key arg
+
+    import os
+    _enforce_key = require_key or os.environ.get("LUME_REQUIRE_ENTERPRISE_KEY", "").lower() in ("1", "true", "yes")
 
     if _resolved_key is None:
         # Pre-classify to decide whether to prompt; errors here are non-fatal —
@@ -271,9 +277,10 @@ def scan(
         except Exception:
             _likely_external = True  # conservative: prompt if unsure
 
-        if _likely_external and authorized:
+        if (_enforce_key or _likely_external) and authorized:
+            prompt_type = "external scan" if _likely_external else "agent assessment scan"
             console.print(
-                "[bold yellow]Enterprise Key required for external scan.[/bold yellow]\n"
+                f"[bold yellow]Enterprise Key required for {prompt_type}.[/bold yellow]\n"
                 "[dim]Get a key at the LUME Key Service dashboard (LUME_KEY_SERVICE_URL).[/dim]"
             )
             _resolved_key = typer.prompt(

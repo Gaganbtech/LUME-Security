@@ -17,15 +17,22 @@
     }
     a { text-decoration:none; }
 
-    /* ── Tokens ─────────────────────────────────────────────────── */
+    /* ── TravLume Tokens (www.travlume.com) ────────────────────────── */
     :root {
-      --navy:   #1a2d5a;
-      --gold:   #c9a84c;
-      --indigo: #3b4fce;
-      --body:   #374151;
-      --muted:  #6b7280;
-      --light:  #f5f5f7;
-      --border: #e5e7eb;
+      --navy:       #242d53;
+      --navy-dark:  #161d36;
+      --navy-light: #2e3a68;
+      --gold:       #d2b68d;
+      --gold-dark:  #c4a67d;
+      --gold-light: #f7f3ec;
+      --gold-tint:  rgba(210, 182, 141, 0.15);
+      --blue:       #3a5bff;
+      --blue-dark:  #2e4ae8;
+      --body:       #374151;
+      --muted:      #6b7280;
+      --light:      #f8f9fc;
+      --border:     #e5e7eb;
+      --success:    #00c758;
     }
 
     /* ── Nav ────────────────────────────────────────────────────── */
@@ -33,82 +40,121 @@
       position:sticky; top:0; z-index:100;
       background:#fff; border-bottom:1px solid var(--border);
       display:flex; align-items:center; justify-content:space-between;
-      padding:0 48px; height:64px;
+      padding:0 48px; height:68px;
     }
-    .nav-logo { font-size:1.2rem; font-weight:800; color:var(--navy); letter-spacing:-.02em; }
+    .nav-logo {
+      display:flex; align-items:center; gap:8px;
+      font-size:1.25rem; font-weight:800; color:var(--navy); letter-spacing:-.02em;
+    }
     .nav-logo .gold { color:var(--gold); }
-    .nav-links { display:flex; gap:4px; align-items:center; }
+    .nav-links { display:flex; gap:6px; align-items:center; }
     .nav-links a {
-      font-size:.88rem; font-weight:500; color:var(--body);
-      padding:7px 14px; border-radius:6px; transition:.18s;
+      font-size:.9rem; font-weight:500; color:var(--navy);
+      padding:8px 16px; border-radius:6px; transition:.18s;
     }
-    .nav-links a:hover { background:var(--light); color:var(--navy); }
-    .nav-cta { display:flex; gap:10px; }
+    .nav-links a:hover { color:var(--gold-dark); background:var(--light); }
+    .nav-cta { display:flex; gap:12px; align-items:center; }
 
     /* ── Buttons ─────────────────────────────────────────────────── */
     .btn {
-      display:inline-flex; align-items:center; gap:7px;
-      padding:10px 24px; border-radius:6px; font-size:.88rem;
+      display:inline-flex; align-items:center; gap:8px;
+      padding:11px 24px; border-radius:8px; font-size:.9rem;
       font-weight:700; cursor:pointer; border:none;
-      font-family:inherit; transition:.18s;
+      font-family:inherit; transition:.2s ease;
     }
-    .btn-gold { background:var(--gold); color:var(--navy); }
-    .btn-gold:hover { background:#b8960c; }
-    .btn-outline-white { background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.5); }
-    .btn-outline-white:hover { background:rgba(255,255,255,.1); border-color:#fff; }
-    .btn-outline-navy { background:transparent; color:var(--navy); border:1.5px solid var(--navy); }
-    .btn-outline-navy:hover { background:var(--navy); color:#fff; }
-    .btn-ghost { background:transparent; color:var(--navy); border:1.5px solid var(--border); }
-    .btn-ghost:hover { border-color:var(--navy); }
-    .btn-sm { padding:7px 16px; font-size:.82rem; }
+    .btn-gold {
+      background:var(--gold); color:var(--navy);
+      box-shadow: 0 4px 12px rgba(210,182,141,.25);
+    }
+    .btn-gold:hover {
+      background:var(--gold-dark); color:var(--navy);
+      box-shadow: 0 6px 16px rgba(210,182,141,.35);
+      transform: translateY(-1px);
+    }
+    .btn-outline-white {
+      background:transparent; color:#fff;
+      border:2px solid rgba(255,255,255,.75);
+    }
+    .btn-outline-white:hover {
+      background:rgba(255,255,255,.12); border-color:#fff;
+      transform: translateY(-1px);
+    }
+    .btn-outline-navy {
+      background:transparent; color:var(--navy);
+      border:2px solid var(--navy);
+    }
+    .btn-outline-navy:hover {
+      background:var(--navy); color:#fff;
+    }
+    .btn-ghost {
+      background:transparent; color:var(--navy);
+      border:1.5px solid var(--border);
+    }
+    .btn-ghost:hover {
+      border-color:var(--navy); color:var(--navy);
+    }
+    .btn-sm { padding:8px 18px; font-size:.84rem; }
 
     /* ── Hero ────────────────────────────────────────────────────── */
     .hero {
-      min-height:540px; display:flex; align-items:center;
-      background:linear-gradient(135deg,#8a8fa8 0%,#b0b4c1 40%,#9ea3b4 70%,#7a7f96 100%);
-      position:relative; overflow:hidden; padding:80px 48px;
+      min-height:560px; display:flex; align-items:center;
+      background:linear-gradient(135deg, #161D36 0%, #242D53 55%, #1E2A5E 100%);
+      position:relative; overflow:hidden; padding:90px 48px;
+      border-bottom: 4px solid var(--gold);
     }
     .hero-wave {
-      position:absolute; right:-60px; top:50%; transform:translateY(-50%);
-      opacity:.35; pointer-events:none;
+      position:absolute; right:-50px; top:50%; transform:translateY(-50%);
+      opacity:.25; pointer-events:none;
     }
     .hero-inner {
-      position:relative; z-index:1; max-width:1100px;
+      position:relative; z-index:1; max-width:1120px;
       margin:0 auto; width:100%;
       display:flex; align-items:center; gap:80px;
     }
     .hero-left { flex:1; }
+    .hero-tagline {
+      display:inline-block; font-size:.78rem; font-weight:800;
+      letter-spacing:.12em; text-transform:uppercase;
+      color:var(--gold); background:rgba(210,182,141,0.15);
+      border:1px solid rgba(210,182,141,0.3);
+      padding:4px 12px; border-radius:4px; margin-bottom:16px;
+    }
     .hero-headline {
-      font-size:3.8rem; font-weight:900; color:var(--navy);
-      line-height:.95; letter-spacing:-.04em; margin-bottom:0;
+      font-size:4rem; font-weight:900; color:#ffffff;
+      line-height:1.02; letter-spacing:-.04em; margin-bottom:0;
     }
-    .hero-right { flex:1; max-width:460px; }
+    .hero-headline .gold-text { color:var(--gold); }
+    .hero-right { flex:1; max-width:480px; }
     .hero-sub {
-      font-size:1.05rem; font-weight:700; color:#fff;
-      margin-bottom:12px; line-height:1.4;
+      font-size:1.15rem; font-weight:700; color:var(--gold);
+      margin-bottom:14px; line-height:1.4;
     }
-    .hero-desc { font-size:.93rem; color:rgba(255,255,255,.88); line-height:1.7; margin-bottom:28px; }
-    .hero-btns { display:flex; gap:12px; flex-wrap:wrap; }
+    .hero-desc {
+      font-size:.95rem; color:rgba(255,255,255,.88);
+      line-height:1.75; margin-bottom:32px;
+    }
+    .hero-btns { display:flex; gap:14px; flex-wrap:wrap; }
 
     /* ── Section ─────────────────────────────────────────────────── */
-    section { padding:80px 48px; }
-    .section-inner { max-width:1100px; margin:0 auto; }
+    section { padding:84px 48px; }
+    .section-inner { max-width:1120px; margin:0 auto; }
     .section-tag {
-      display:inline-block; font-size:.7rem; font-weight:700;
+      display:inline-block; font-size:.72rem; font-weight:800;
       letter-spacing:.12em; text-transform:uppercase;
-      color:var(--gold); background:#fffbeb; border:1px solid #fde68a;
-      padding:3px 10px; border-radius:4px; margin-bottom:14px;
+      color:var(--navy); background:var(--gold-light);
+      border:1px solid var(--gold);
+      padding:4px 12px; border-radius:4px; margin-bottom:14px;
     }
     .section-title {
-      font-size:2rem; font-weight:800; color:var(--navy);
-      letter-spacing:-.03em; margin-bottom:12px;
+      font-size:2.2rem; font-weight:800; color:var(--navy);
+      letter-spacing:-.03em; margin-bottom:14px;
     }
     .section-sub {
-      font-size:.95rem; color:var(--muted);
-      max-width:560px; margin:0 auto 52px; text-align:center; line-height:1.65;
+      font-size:.98rem; color:var(--muted);
+      max-width:580px; margin:0 auto 52px; text-align:center; line-height:1.65;
     }
     .text-center { text-align:center; }
-    .gold-bar { width:36px; height:3px; background:var(--gold); border-radius:2px; margin-bottom:14px; }
+    .gold-bar { width:40px; height:3.5px; background:var(--gold); border-radius:2px; margin:0 auto 16px; }
 
     /* ── How it works (numbered steps with circles + horizontal line) */
     .steps-row {
@@ -144,13 +190,14 @@
 
     /* ── CTA banner ─────────────────────────────────────────────── */
     .cta-section {
-      background:linear-gradient(135deg,#1a2d5a 0%,#2d3eb0 60%,#3b4fce 100%);
-      padding:80px 48px; text-align:center; position:relative; overflow:hidden;
+      background:linear-gradient(135deg, #161D36 0%, #242D53 60%, #1E2A5E 100%);
+      padding:84px 48px; text-align:center; position:relative; overflow:hidden;
+      border-top: 3px solid var(--gold);
     }
     .cta-section::before {
       content:''; position:absolute; top:-120px; right:-120px;
       width:400px; height:400px;
-      background:radial-gradient(circle,rgba(201,168,76,.12) 0%,transparent 70%);
+      background:radial-gradient(circle,rgba(210,182,141,.2) 0%,transparent 70%);
       pointer-events:none;
     }
     .cta-section h2 {
@@ -351,7 +398,7 @@
 
       <div class="why-card">
         <div class="why-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D2B68D" stroke-width="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </div>
@@ -363,7 +410,7 @@
 
       <div class="why-card">
         <div class="why-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D2B68D" stroke-width="2">
             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </div>
@@ -375,7 +422,7 @@
 
       <div class="why-card">
         <div class="why-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D2B68D" stroke-width="2">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
         </div>
@@ -387,7 +434,7 @@
 
       <div class="why-card">
         <div class="why-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D2B68D" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
             <line x1="16" y1="17" x2="8" y2="17"/>
@@ -401,7 +448,7 @@
 
       <div class="why-card">
         <div class="why-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D2B68D" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
@@ -414,7 +461,7 @@
 
       <div class="why-card">
         <div class="why-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D2B68D" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
             <path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>
           </svg>

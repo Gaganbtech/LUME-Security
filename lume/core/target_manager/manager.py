@@ -284,11 +284,15 @@ class TargetManager:
         # Step 1: explicit user authorization (--authorized flag)
         cls.verify_authorization(normalized_url, authorized=authorized)
 
-        # Step 2: enterprise key validation (external targets only)
-        if is_external:
+        # Step 2: enterprise key validation
+        # Required for external targets, or when LUME_REQUIRE_ENTERPRISE_KEY=true / enforce_key
+        import os
+        require_all = os.environ.get("LUME_REQUIRE_ENTERPRISE_KEY", "").lower() in ("1", "true", "yes")
+        if is_external or require_all:
             if not enterprise_key or not enterprise_key.strip():
+                target_desc = "external target" if is_external else "target"
                 raise TargetAuthorizationError(
-                    f"An Enterprise Key is required to scan external target '{normalized_url}'. "
+                    f"An Enterprise Key is required to scan {target_desc} '{normalized_url}'. "
                     f"Sign in to the LUME Key Service to obtain a key, "
                     f"then pass it with --enterprise-key or LUME_ENTERPRISE_KEY."
                 )
