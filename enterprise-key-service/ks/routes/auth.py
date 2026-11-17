@@ -95,7 +95,7 @@ async def signup_page(request: Request):
 
 
 @router.post("/signup", response_class=HTMLResponse)
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 async def signup_form(
     request: Request,
     username: str = Form(...),
