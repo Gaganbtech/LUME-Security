@@ -111,7 +111,7 @@
               </td>
               <td>
                 <div class="action-row">
-                  <form method="post" action="/admin/users/{{ u.id }}/approve-account">
+                  <form method="post" action="/admin/users/{{ u.id }}/approve-account" onsubmit="this.querySelector('button').disabled=true;">
                     <button type="submit" class="btn btn-success-soft btn-sm">✓ Approve Account</button>
                   </form>
                   <form method="post" action="/admin/users/{{ u.id }}/reject-account">
@@ -167,7 +167,7 @@
               </td>
               <td>
                 <div class="action-row">
-                  <form method="post" action="/admin/requests/{{ r.id }}/approve">
+                  <form method="post" action="/admin/requests/{{ r.id }}/approve" onsubmit="this.querySelector('button').disabled=true;">
                     <button type="submit" class="btn btn-success-soft btn-sm">
                       ✓ Approve &amp; Issue
                     </button>

@@ -284,7 +284,10 @@ async def approve_request_form(
     db: Session = Depends(get_db),
 ):
     """Browser form: admin approves a request."""
-    await approve_request(request_id, current_user, db)
+    try:
+        await approve_request(request_id, current_user, db)
+    except HTTPException:
+        pass  # If already approved or processed, cleanly redirect back to dashboard
     return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -297,12 +300,8 @@ async def reject_request_form(
 ):
     """Browser form: admin rejects a request."""
     req = db.query(KeyRequest).filter(KeyRequest.id == request_id).first()
-    if not req:
-        raise HTTPException(status_code=404, detail="Request not found.")
-    if req.status != "pending":
-        raise HTTPException(status_code=409, detail=f"Request is already {req.status}.")
-    if req.user_id == current_user.id:
-        raise HTTPException(status_code=403, detail="Cannot reject your own request.")
+    if not req or req.status != "pending" or req.user_id == current_user.id:
+        return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
     # Get reason from form data
     form = await request.form()
@@ -516,7 +515,10 @@ async def approve_account_form(
     current_user: User = Depends(require_role_cookie("admin")),
     db: Session = Depends(get_db),
 ):
-    await approve_account(user_id, current_user, db)
+    try:
+        await approve_account(user_id, current_user, db)
+    except HTTPException:
+        pass
     return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -546,7 +548,10 @@ async def reject_account_form(
     current_user: User = Depends(require_role_cookie("admin")),
     db: Session = Depends(get_db),
 ):
-    await reject_account(user_id, current_user, db)
+    try:
+        await reject_account(user_id, current_user, db)
+    except HTTPException:
+        pass
     return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -611,5 +616,8 @@ async def revoke_key_form(
     current_user: User = Depends(require_role_cookie("admin")),
     db: Session = Depends(get_db),
 ):
-    await revoke_key(key_id, current_user, db)
+    try:
+        await revoke_key(key_id, current_user, db)
+    except HTTPException:
+        pass
     return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
