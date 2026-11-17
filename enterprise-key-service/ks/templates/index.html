@@ -180,45 +180,38 @@
       height:5px;
     }
 
-    /* Phase 01: Blue */
-    .pipeline-step-1::before { background:linear-gradient(90deg, #2563EB, #38BDF8); }
-    .pipeline-step-1:hover { border-color:#93c5fd; }
+    /* TravLume Brand Styling (Matching www.travlume.com) */
+    .pipeline-step-1::before { background:linear-gradient(90deg, #161D36, #242D53); }
+    .pipeline-step-1:hover { border-color:#D2B68D; }
     .pipeline-step-1 .icon-squircle {
-      background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-      border:1px solid #bfdbfe; color:#2563EB;
+      background:#F7F3EC; border:1.5px solid #D2B68D; color:#242D53;
     }
-    .pipeline-step-1 .phase-tag { color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; }
-    .pipeline-step-1 .dot { background:#2563EB; box-shadow:0 0 6px rgba(37,99,235,0.6); }
+    .pipeline-step-1 .phase-tag { color:#242D53; background:#F7F3EC; border:1px solid #D2B68D; }
+    .pipeline-step-1 .dot { background:#242D53; box-shadow:0 0 6px rgba(36,45,83,0.4); }
 
-    /* Phase 02: Violet/Purple */
-    .pipeline-step-2::before { background:linear-gradient(90deg, #6366F1, #A855F7); }
-    .pipeline-step-2:hover { border-color:#c4b5fd; }
+    .pipeline-step-2::before { background:linear-gradient(90deg, #D2B68D, #C4A67D); }
+    .pipeline-step-2:hover { border-color:#D2B68D; }
     .pipeline-step-2 .icon-squircle {
-      background:linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-      border:1px solid #ddd6fe; color:#7C3AED;
+      background:#161D36; border:1.5px solid #242D53; color:#D2B68D;
     }
-    .pipeline-step-2 .phase-tag { color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; }
-    .pipeline-step-2 .dot { background:#7C3AED; box-shadow:0 0 6px rgba(124,58,237,0.6); }
+    .pipeline-step-2 .phase-tag { color:#D2B68D; background:#161D36; border:1px solid #242D53; }
+    .pipeline-step-2 .dot { background:#D2B68D; box-shadow:0 0 6px rgba(210,182,141,0.6); }
 
-    /* Phase 03: TravLume Gold */
-    .pipeline-step-3::before { background:linear-gradient(90deg, #D2B68D, #F59E0B); }
-    .pipeline-step-3:hover { border-color:#fde68a; }
+    .pipeline-step-3::before { background:linear-gradient(90deg, #242D53, #D2B68D); }
+    .pipeline-step-3:hover { border-color:#D2B68D; }
     .pipeline-step-3 .icon-squircle {
-      background:linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
-      border:1px solid #fde68a; color:#B45309;
+      background:#F7F3EC; border:1.5px solid #D2B68D; color:#242D53;
     }
-    .pipeline-step-3 .phase-tag { color:#92400e; background:#fffbeb; border:1px solid #fde68a; }
-    .pipeline-step-3 .dot { background:#D97706; box-shadow:0 0 6px rgba(217,119,6,0.6); }
+    .pipeline-step-3 .phase-tag { color:#242D53; background:#F7F3EC; border:1px solid #D2B68D; }
+    .pipeline-step-3 .dot { background:#D2B68D; box-shadow:0 0 6px rgba(210,182,141,0.6); }
 
-    /* Phase 04: Cyber Emerald */
-    .pipeline-step-4::before { background:linear-gradient(90deg, #059669, #00C758); }
-    .pipeline-step-4:hover { border-color:#a7f3d0; }
+    .pipeline-step-4::before { background:linear-gradient(90deg, #D2B68D, #161D36); }
+    .pipeline-step-4:hover { border-color:#D2B68D; }
     .pipeline-step-4 .icon-squircle {
-      background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      border:1px solid #a7f3d0; color:#059669;
+      background:#161D36; border:1.5px solid #D2B68D; color:#D2B68D;
     }
-    .pipeline-step-4 .phase-tag { color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; }
-    .pipeline-step-4 .dot { background:#00C758; box-shadow:0 0 6px rgba(0,199,88,0.7); }
+    .pipeline-step-4 .phase-tag { color:#D2B68D; background:#161D36; border:1px solid #242D53; }
+    .pipeline-step-4 .dot { background:#242D53; box-shadow:0 0 6px rgba(36,45,83,0.4); }
 
     .card-top {
       display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;
@@ -263,15 +256,15 @@
     /* Workflow pipeline line ribbon */
     .pipeline-stream-bar {
       display:flex; align-items:center; justify-content:space-between;
-      background:#f8f9fc; border:1px solid #e5e7eb; border-radius:8px;
-      padding:10px 18px; margin-bottom:24px; font-size:.78rem; color:var(--muted);
+      background:#F7F3EC; border:1px solid #D2B68D; border-radius:8px;
+      padding:10px 18px; margin-bottom:24px; font-size:.78rem; color:#242D53;
     }
     .stream-status {
-      display:inline-flex; align-items:center; gap:8px; font-weight:700; color:var(--navy);
+      display:inline-flex; align-items:center; gap:8px; font-weight:700; color:#242D53;
     }
     .stream-pulse {
-      width:8px; height:8px; border-radius:50%; background:#00C758;
-      box-shadow:0 0 8px rgba(0,199,88,0.8);
+      width:8px; height:8px; border-radius:50%; background:#D2B68D;
+      box-shadow:0 0 8px rgba(210,182,141,0.85);
       animation:dotPulse 1.8s infinite;
     }
 
