@@ -156,100 +156,124 @@
     .text-center { text-align:center; }
     .gold-bar { width:40px; height:3.5px; background:var(--gold); border-radius:2px; margin:0 auto 16px; }
 
-    /* ── How it works (numbered steps with animated colorful circles + flowing line) */
-    .steps-row {
-      display:flex; gap:0; align-items:flex-start; position:relative;
+    /* ── How it works: Enterprise Security Pipeline (Production-Grade Architecture) */
+    .pipeline-grid {
+      display:grid; grid-template-columns:repeat(4, 1fr); gap:20px;
+      position:relative; margin-top:24px;
     }
-    .steps-row::before {
-      content:''; position:absolute; top:36px; left:8%; right:8%;
-      height:3px;
-      background: linear-gradient(90deg, #2563EB 0%, #6366F1 30%, #D2B68D 65%, #00C758 100%);
-      background-size: 200% 100%;
-      animation: lineGradientFlow 5s linear infinite;
-      border-radius: 4px;
-      z-index:0;
+    .pipeline-card {
+      background:#ffffff; border:1px solid #e5e7eb; border-radius:12px;
+      padding:24px 20px; position:relative; overflow:hidden;
+      display:flex; flex-direction:column; justify-content:space-between;
+      transition:all .3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow:0 2px 8px rgba(0,0,0,0.03);
     }
-    .step {
-      flex:1; text-align:center; position:relative; z-index:1; padding:0 18px;
-      transition: transform .25s ease;
+    .pipeline-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3.5px;
+      transition:height .25s ease;
     }
-    .step:hover {
-      transform: translateY(-5px);
+    .pipeline-card:hover {
+      transform:translateY(-6px);
+      box-shadow:0 16px 32px -8px rgba(36,45,83,0.12), 0 4px 12px rgba(0,0,0,0.04);
     }
-    .step-circle-wrapper {
-      position:relative; display:inline-block; margin-bottom:16px;
-    }
-    .step-circle {
-      width:72px; height:72px; border-radius:50%;
-      display:inline-flex; align-items:center; justify-content:center;
-      position:relative; z-index:2;
-      transition: transform .35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .3s ease;
-      cursor:pointer;
-    }
-    .step:hover .step-circle {
-      transform: scale(1.14) rotate(4deg);
-    }
-    .step-pulse-ring {
-      position:absolute; inset:-8px; border-radius:50%;
-      border:2px solid; opacity:0.4;
-      animation: pulseWave 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      pointer-events:none; z-index:1;
+    .pipeline-card:hover::before {
+      height:5px;
     }
 
-    /* Individual vibrant step themes */
-    .step-1 .step-circle {
-      background: linear-gradient(135deg, #2563EB 0%, #38BDF8 100%);
-      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.42), inset 0 1px 2px rgba(255,255,255,0.5);
-      animation: floatStep 3.6s ease-in-out infinite 0s;
+    /* Phase 01: Blue */
+    .pipeline-step-1::before { background:linear-gradient(90deg, #2563EB, #38BDF8); }
+    .pipeline-step-1:hover { border-color:#93c5fd; }
+    .pipeline-step-1 .icon-squircle {
+      background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border:1px solid #bfdbfe; color:#2563EB;
     }
-    .step-1 .step-pulse-ring { border-color: #38BDF8; animation-delay: 0s; }
-    .step-1 .step-num-label { color: #2563EB; background: #eff6ff; border: 1px solid #bfdbfe; }
+    .pipeline-step-1 .phase-tag { color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; }
+    .pipeline-step-1 .dot { background:#2563EB; box-shadow:0 0 6px rgba(37,99,235,0.6); }
 
-    .step-2 .step-circle {
-      background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.42), inset 0 1px 2px rgba(255,255,255,0.5);
-      animation: floatStep 3.6s ease-in-out infinite 0.9s;
+    /* Phase 02: Violet/Purple */
+    .pipeline-step-2::before { background:linear-gradient(90deg, #6366F1, #A855F7); }
+    .pipeline-step-2:hover { border-color:#c4b5fd; }
+    .pipeline-step-2 .icon-squircle {
+      background:linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      border:1px solid #ddd6fe; color:#7C3AED;
     }
-    .step-2 .step-pulse-ring { border-color: #A855F7; animation-delay: 0.9s; }
-    .step-2 .step-num-label { color: #7C3AED; background: #f5f3ff; border: 1px solid #ddd6fe; }
+    .pipeline-step-2 .phase-tag { color:#6d28d9; background:#f5f3ff; border:1px solid #ddd6fe; }
+    .pipeline-step-2 .dot { background:#7C3AED; box-shadow:0 0 6px rgba(124,58,237,0.6); }
 
-    .step-3 .step-circle {
-      background: linear-gradient(135deg, #D2B68D 0%, #F59E0B 100%);
-      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45), inset 0 1px 2px rgba(255,255,255,0.5);
-      animation: floatStep 3.6s ease-in-out infinite 1.8s;
+    /* Phase 03: TravLume Gold */
+    .pipeline-step-3::before { background:linear-gradient(90deg, #D2B68D, #F59E0B); }
+    .pipeline-step-3:hover { border-color:#fde68a; }
+    .pipeline-step-3 .icon-squircle {
+      background:linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+      border:1px solid #fde68a; color:#B45309;
     }
-    .step-3 .step-pulse-ring { border-color: #F59E0B; animation-delay: 1.8s; }
-    .step-3 .step-num-label { color: #B45309; background: #fffbeb; border: 1px solid #fde68a; }
+    .pipeline-step-3 .phase-tag { color:#92400e; background:#fffbeb; border:1px solid #fde68a; }
+    .pipeline-step-3 .dot { background:#D97706; box-shadow:0 0 6px rgba(217,119,6,0.6); }
 
-    .step-4 .step-circle {
-      background: linear-gradient(135deg, #059669 0%, #00C758 100%);
-      box-shadow: 0 8px 24px rgba(0, 199, 88, 0.42), inset 0 1px 2px rgba(255,255,255,0.5);
-      animation: floatStep 3.6s ease-in-out infinite 2.7s;
+    /* Phase 04: Cyber Emerald */
+    .pipeline-step-4::before { background:linear-gradient(90deg, #059669, #00C758); }
+    .pipeline-step-4:hover { border-color:#a7f3d0; }
+    .pipeline-step-4 .icon-squircle {
+      background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border:1px solid #a7f3d0; color:#059669;
     }
-    .step-4 .step-pulse-ring { border-color: #00C758; animation-delay: 2.7s; }
-    .step-4 .step-num-label { color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; }
+    .pipeline-step-4 .phase-tag { color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; }
+    .pipeline-step-4 .dot { background:#00C758; box-shadow:0 0 6px rgba(0,199,88,0.7); }
 
-    @keyframes floatStep {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+    .card-top {
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;
     }
-    @keyframes pulseWave {
-      0% { transform: scale(0.92); opacity: 0.7; }
-      50% { transform: scale(1.18); opacity: 0.15; }
-      100% { transform: scale(0.92); opacity: 0.7; }
+    .icon-squircle {
+      width:46px; height:46px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      transition:transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    @keyframes lineGradientFlow {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 200% 50%; }
+    .pipeline-card:hover .icon-squircle {
+      transform:scale(1.1) rotate(3deg);
+    }
+    .phase-tag {
+      font-size:.7rem; font-weight:800; letter-spacing:.08em;
+      text-transform:uppercase; padding:3px 9px; border-radius:6px;
+      font-family:'JetBrains Mono','Consolas',monospace;
+    }
+    .pipeline-title {
+      font-size:1.08rem; font-weight:800; color:var(--navy);
+      letter-spacing:-.02em; margin-bottom:8px; line-height:1.3;
+    }
+    .pipeline-desc {
+      font-size:.84rem; color:var(--muted); line-height:1.55; margin-bottom:20px;
+    }
+    .pipeline-footer {
+      border-top:1px dashed #e5e7eb; padding-top:12px; margin-top:auto;
+    }
+    .tech-spec {
+      font-size:.74rem; font-weight:700; color:#4b5563;
+      display:inline-flex; align-items:center; gap:6px;
+      font-family:'JetBrains Mono','Consolas',monospace;
+    }
+    .tech-spec .dot {
+      width:6px; height:6px; border-radius:50%; display:inline-block;
+      animation:dotPulse 2s ease-in-out infinite;
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity:1; transform:scale(1); }
+      50% { opacity:.4; transform:scale(0.85); }
     }
 
-    .step-num-label {
-      font-size:.88rem; font-weight:800; letter-spacing:.08em;
-      margin-bottom:8px; display:inline-block;
-      padding:3px 12px; border-radius:20px;
+    /* Workflow pipeline line ribbon */
+    .pipeline-stream-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      background:#f8f9fc; border:1px solid #e5e7eb; border-radius:8px;
+      padding:10px 18px; margin-bottom:24px; font-size:.78rem; color:var(--muted);
     }
-    .step-title { font-size:1.02rem; font-weight:800; color:var(--navy); margin-bottom:6px; }
-    .step-desc { font-size:.84rem; color:var(--muted); line-height:1.55; }
+    .stream-status {
+      display:inline-flex; align-items:center; gap:8px; font-weight:700; color:var(--navy);
+    }
+    .stream-pulse {
+      width:8px; height:8px; border-radius:50%; background:#00C758;
+      box-shadow:0 0 8px rgba(0,199,88,0.8);
+      animation:dotPulse 1.8s infinite;
+    }
 
     /* ── Why cards (matching "Why Choose TravLume" screenshot style) */
     .why-section { background:var(--light); }
@@ -314,15 +338,15 @@
     }
 
     /* ── Responsive ─────────────────────────────────────────────── */
-    @media(max-width:900px) {
+    @media(max-width:960px) {
       .nav { padding:0 20px; }
       .hero { padding:56px 20px; }
       .hero-inner { flex-direction:column; gap:36px; }
       .hero-headline { font-size:2.6rem; }
       section { padding:56px 20px; }
       .why-grid { grid-template-columns:1fr 1fr; }
-      .steps-row { flex-direction:column; gap:28px; }
-      .steps-row::before { display:none; }
+      .pipeline-grid { grid-template-columns:1fr 1fr; gap:16px; }
+      .pipeline-stream-bar { flex-direction:column; gap:8px; text-align:center; }
       .footer-top { grid-template-columns:1fr 1fr; gap:32px; padding:40px 20px 28px; }
       .footer-bottom { padding:16px 20px; flex-direction:column; text-align:center; }
       .footer-wordmark { display:none; }
@@ -330,6 +354,7 @@
     @media(max-width:600px) {
       .nav-links { display:none; }
       .why-grid { grid-template-columns:1fr; }
+      .pipeline-grid { grid-template-columns:1fr; }
       .footer-top { grid-template-columns:1fr; }
       .hero-btns .btn { width:100%; justify-content:center; }
     }
@@ -393,73 +418,95 @@
       </p>
     </div>
 
-    <div class="steps-row">
+    <div class="pipeline-stream-bar">
+      <div class="stream-status">
+        <span class="stream-pulse"></span>
+        <span>SECURITY PIPELINE READY // ZERO-TRUST WORKFLOW</span>
+      </div>
+      <div>
+        <span>OWASP LLM01:2025 COMPLIANT &bull; CRYPTOGRAPHIC AUDIT LOG</span>
+      </div>
+    </div>
 
-      <div class="step step-1">
-        <div class="step-circle-wrapper">
-          <div class="step-pulse-ring"></div>
-          <div class="step-circle">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    <div class="pipeline-grid">
+
+      <!-- Phase 01 -->
+      <div class="pipeline-card pipeline-step-1">
+        <div class="card-top">
+          <div class="icon-squircle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </div>
+          <span class="phase-tag">PHASE 01</span>
         </div>
-        <div>
-          <span class="step-num-label">STEP 01</span>
+        <h3 class="pipeline-title">Sign Up &amp; Request</h3>
+        <p class="pipeline-desc">Create your enterprise account and submit target AI endpoint scope for assessment authorization.</p>
+        <div class="pipeline-footer">
+          <span class="tech-spec">
+            <span class="dot"></span> RBAC &amp; Identity Guard
+          </span>
         </div>
-        <div class="step-title">Sign Up &amp; Request</div>
-        <div class="step-desc">Create your account and submit a key request from your dashboard</div>
       </div>
 
-      <div class="step step-2">
-        <div class="step-circle-wrapper">
-          <div class="step-pulse-ring"></div>
-          <div class="step-circle">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
-              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-              <rect x="9" y="3" width="6" height="4" rx="1"/>
-              <path d="M9 12l2 2 4-4"/>
+      <!-- Phase 02 -->
+      <div class="pipeline-card pipeline-step-2">
+        <div class="card-top">
+          <div class="icon-squircle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
             </svg>
           </div>
+          <span class="phase-tag">PHASE 02</span>
         </div>
-        <div>
-          <span class="step-num-label">STEP 02</span>
+        <h3 class="pipeline-title">Admin Reviews</h3>
+        <p class="pipeline-desc">Security administrators inspect target scope and verify dual-control consent before key generation.</p>
+        <div class="pipeline-footer">
+          <span class="tech-spec">
+            <span class="dot"></span> Dual-Control Consent
+          </span>
         </div>
-        <div class="step-title">Admin Reviews</div>
-        <div class="step-desc">An admin reviews your request and approves or rejects it</div>
       </div>
 
-      <div class="step step-3">
-        <div class="step-circle-wrapper">
-          <div class="step-pulse-ring"></div>
-          <div class="step-circle">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
-              <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <!-- Phase 03 -->
+      <div class="pipeline-card pipeline-step-3">
+        <div class="card-top">
+          <div class="icon-squircle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              <circle cx="12" cy="16" r="1.5"/>
             </svg>
           </div>
+          <span class="phase-tag">PHASE 03</span>
         </div>
-        <div>
-          <span class="step-num-label">STEP 03</span>
+        <h3 class="pipeline-title">Key Issuance</h3>
+        <p class="pipeline-desc">A cryptographically signed, one-time 256-bit authorization token is provisioned and revealed once.</p>
+        <div class="pipeline-footer">
+          <span class="tech-spec">
+            <span class="dot"></span> SHA-256 HMAC Seal
+          </span>
         </div>
-        <div class="step-title">Key Issued Once</div>
-        <div class="step-desc">Your unique 256-bit key is shown once on approval — copy it immediately</div>
       </div>
 
-      <div class="step step-4">
-        <div class="step-circle-wrapper">
-          <div class="step-pulse-ring"></div>
-          <div class="step-circle">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+      <!-- Phase 04 -->
+      <div class="pipeline-card pipeline-step-4">
+        <div class="card-top">
+          <div class="icon-squircle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
           </div>
+          <span class="phase-tag">PHASE 04</span>
         </div>
-        <div>
-          <span class="step-num-label">STEP 04</span>
+        <h3 class="pipeline-title">Authorise &amp; Scan</h3>
+        <p class="pipeline-desc">Execute the LUME assessment CLI. The key is consumed atomically in the central ledger for single-use.</p>
+        <div class="pipeline-footer">
+          <span class="tech-spec">
+            <span class="dot"></span> Atomic Consumption
+          </span>
         </div>
-        <div class="step-title">Authorise &amp; Scan</div>
-        <div class="step-desc">Pass the key to the LUME CLI — it is consumed atomically for one scan</div>
       </div>
 
     </div>
