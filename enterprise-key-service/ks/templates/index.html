@@ -156,24 +156,100 @@
     .text-center { text-align:center; }
     .gold-bar { width:40px; height:3.5px; background:var(--gold); border-radius:2px; margin:0 auto 16px; }
 
-    /* ── How it works (numbered steps with circles + horizontal line) */
+    /* ── How it works (numbered steps with animated colorful circles + flowing line) */
     .steps-row {
       display:flex; gap:0; align-items:flex-start; position:relative;
     }
     .steps-row::before {
-      content:''; position:absolute; top:26px; left:10%; right:10%;
-      height:1px; background:var(--border); z-index:0;
+      content:''; position:absolute; top:36px; left:8%; right:8%;
+      height:3px;
+      background: linear-gradient(90deg, #2563EB 0%, #6366F1 30%, #D2B68D 65%, #00C758 100%);
+      background-size: 200% 100%;
+      animation: lineGradientFlow 5s linear infinite;
+      border-radius: 4px;
+      z-index:0;
     }
-    .step { flex:1; text-align:center; position:relative; z-index:1; padding:0 20px; }
+    .step {
+      flex:1; text-align:center; position:relative; z-index:1; padding:0 18px;
+      transition: transform .25s ease;
+    }
+    .step:hover {
+      transform: translateY(-5px);
+    }
+    .step-circle-wrapper {
+      position:relative; display:inline-block; margin-bottom:16px;
+    }
     .step-circle {
-      width:52px; height:52px; border-radius:50%;
-      background:var(--indigo); color:#fff;
+      width:72px; height:72px; border-radius:50%;
       display:inline-flex; align-items:center; justify-content:center;
-      margin-bottom:14px; box-shadow:0 4px 14px rgba(59,79,206,.28);
+      position:relative; z-index:2;
+      transition: transform .35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .3s ease;
+      cursor:pointer;
     }
-    .step-num-label { font-size:1.75rem; font-weight:900; color:#e5e7eb; margin-bottom:6px; }
-    .step-title { font-size:.95rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
-    .step-desc { font-size:.83rem; color:var(--muted); line-height:1.55; }
+    .step:hover .step-circle {
+      transform: scale(1.14) rotate(4deg);
+    }
+    .step-pulse-ring {
+      position:absolute; inset:-8px; border-radius:50%;
+      border:2px solid; opacity:0.4;
+      animation: pulseWave 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      pointer-events:none; z-index:1;
+    }
+
+    /* Individual vibrant step themes */
+    .step-1 .step-circle {
+      background: linear-gradient(135deg, #2563EB 0%, #38BDF8 100%);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.42), inset 0 1px 2px rgba(255,255,255,0.5);
+      animation: floatStep 3.6s ease-in-out infinite 0s;
+    }
+    .step-1 .step-pulse-ring { border-color: #38BDF8; animation-delay: 0s; }
+    .step-1 .step-num-label { color: #2563EB; background: #eff6ff; border: 1px solid #bfdbfe; }
+
+    .step-2 .step-circle {
+      background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.42), inset 0 1px 2px rgba(255,255,255,0.5);
+      animation: floatStep 3.6s ease-in-out infinite 0.9s;
+    }
+    .step-2 .step-pulse-ring { border-color: #A855F7; animation-delay: 0.9s; }
+    .step-2 .step-num-label { color: #7C3AED; background: #f5f3ff; border: 1px solid #ddd6fe; }
+
+    .step-3 .step-circle {
+      background: linear-gradient(135deg, #D2B68D 0%, #F59E0B 100%);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45), inset 0 1px 2px rgba(255,255,255,0.5);
+      animation: floatStep 3.6s ease-in-out infinite 1.8s;
+    }
+    .step-3 .step-pulse-ring { border-color: #F59E0B; animation-delay: 1.8s; }
+    .step-3 .step-num-label { color: #B45309; background: #fffbeb; border: 1px solid #fde68a; }
+
+    .step-4 .step-circle {
+      background: linear-gradient(135deg, #059669 0%, #00C758 100%);
+      box-shadow: 0 8px 24px rgba(0, 199, 88, 0.42), inset 0 1px 2px rgba(255,255,255,0.5);
+      animation: floatStep 3.6s ease-in-out infinite 2.7s;
+    }
+    .step-4 .step-pulse-ring { border-color: #00C758; animation-delay: 2.7s; }
+    .step-4 .step-num-label { color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; }
+
+    @keyframes floatStep {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes pulseWave {
+      0% { transform: scale(0.92); opacity: 0.7; }
+      50% { transform: scale(1.18); opacity: 0.15; }
+      100% { transform: scale(0.92); opacity: 0.7; }
+    }
+    @keyframes lineGradientFlow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .step-num-label {
+      font-size:.88rem; font-weight:800; letter-spacing:.08em;
+      margin-bottom:8px; display:inline-block;
+      padding:3px 12px; border-radius:20px;
+    }
+    .step-title { font-size:1.02rem; font-weight:800; color:var(--navy); margin-bottom:6px; }
+    .step-desc { font-size:.84rem; color:var(--muted); line-height:1.55; }
 
     /* ── Why cards (matching "Why Choose TravLume" screenshot style) */
     .why-section { background:var(--light); }
@@ -319,49 +395,69 @@
 
     <div class="steps-row">
 
-      <div class="step">
-        <div class="step-circle">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
+      <div class="step step-1">
+        <div class="step-circle-wrapper">
+          <div class="step-pulse-ring"></div>
+          <div class="step-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
         </div>
-        <div class="step-num-label">01</div>
+        <div>
+          <span class="step-num-label">STEP 01</span>
+        </div>
         <div class="step-title">Sign Up &amp; Request</div>
         <div class="step-desc">Create your account and submit a key request from your dashboard</div>
       </div>
 
-      <div class="step">
-        <div class="step-circle">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <path d="M9 12l2 2 4-4"/>
-          </svg>
+      <div class="step step-2">
+        <div class="step-circle-wrapper">
+          <div class="step-pulse-ring"></div>
+          <div class="step-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
         </div>
-        <div class="step-num-label">02</div>
+        <div>
+          <span class="step-num-label">STEP 02</span>
+        </div>
         <div class="step-title">Admin Reviews</div>
         <div class="step-desc">An admin reviews your request and approves or rejects it</div>
       </div>
 
-      <div class="step">
-        <div class="step-circle">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
+      <div class="step step-3">
+        <div class="step-circle-wrapper">
+          <div class="step-pulse-ring"></div>
+          <div class="step-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
         </div>
-        <div class="step-num-label">03</div>
+        <div>
+          <span class="step-num-label">STEP 03</span>
+        </div>
         <div class="step-title">Key Issued Once</div>
         <div class="step-desc">Your unique 256-bit key is shown once on approval — copy it immediately</div>
       </div>
 
-      <div class="step">
-        <div class="step-circle">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
+      <div class="step step-4">
+        <div class="step-circle-wrapper">
+          <div class="step-pulse-ring"></div>
+          <div class="step-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
         </div>
-        <div class="step-num-label">04</div>
+        <div>
+          <span class="step-num-label">STEP 04</span>
+        </div>
         <div class="step-title">Authorise &amp; Scan</div>
         <div class="step-desc">Pass the key to the LUME CLI — it is consumed atomically for one scan</div>
       </div>
