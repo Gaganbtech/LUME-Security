@@ -82,20 +82,29 @@
       </div>
 
       {% if success %}
-      <div style="padding:14px 18px;background:#f0fdf4;border:1px solid #bbf7d0;
-                   border-left:4px solid #00c758;border-radius:6px;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c758" stroke-width="2.5">
-            <path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>
+      <div style="padding:28px 24px;background:#f0fdf4;border:1.5px solid #86efac;
+                   border-radius:10px;margin-bottom:28px;text-align:center;">
+        <div style="width:56px;height:56px;border-radius:50%;background:#dcfce7;
+                    display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00c758" stroke-width="2.5">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          <span style="color:#14532d;font-size:.9rem;font-weight:600;">{{ success }}</span>
         </div>
-        <div style="margin-top:12px;">
-          <a href="/login" style="display:inline-flex;align-items:center;gap:6px;
-                                   background:#D2B68D;color:#242D53;padding:9px 20px;
-                                   border-radius:6px;font-size:.88rem;font-weight:700;
-                                   text-decoration:none;">
-            Sign In Now &rsaquo;
+        <h3 style="font-size:1.45rem;font-weight:800;color:#166534;margin:0 0 8px;letter-spacing:-.02em;">Request Sent!</h3>
+        <p style="color:#15803d;font-size:.92rem;line-height:1.55;margin:0 0 18px;">
+          {{ success }}
+        </p>
+        <div style="display:inline-block;background:#fef3c7;border:1px solid #fde68a;
+                    color:#92400e;padding:6px 16px;border-radius:20px;font-size:.82rem;font-weight:700;margin-bottom:22px;">
+          Status: Pending Admin Approval
+        </div>
+        <div>
+          <a href="/login" style="display:inline-flex;align-items:center;gap:8px;
+                                   background:#242D53;color:#D2B68D;padding:12px 26px;
+                                   border-radius:6px;font-size:.92rem;font-weight:700;
+                                   text-decoration:none;box-shadow:0 4px 14px rgba(36,45,83,.25);transition:opacity .15s;">
+            Go to Login &rsaquo;
           </a>
         </div>
       </div>

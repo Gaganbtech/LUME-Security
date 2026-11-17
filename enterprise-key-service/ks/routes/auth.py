@@ -166,7 +166,7 @@ async def signup_form(
         name="signup.html",
         context={
             "error": None,
-            "success": "Account created! An admin will review and approve it. You'll be able to sign in and request keys once approved.",
+            "success": "Request sent! An administrator will review and approve your account. You will be able to sign in once approved.",
         },
     )
 
